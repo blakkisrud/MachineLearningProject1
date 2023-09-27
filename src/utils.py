@@ -33,8 +33,8 @@ sns.set_style("whitegrid")
 
 # Functions
 
-def FrankeFunction(x,y, add_noise = False, sigma = 0.1):
 
+def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
     Franke function, used for regression analysis.
 
@@ -55,5 +55,3 @@ def FrankeFunction(x,y, add_noise = False, sigma = 0.1):
         return term1 + term2 + term3 + term4 + noise
     else:
         return term1 + term2 + term3 + term4
-    
-

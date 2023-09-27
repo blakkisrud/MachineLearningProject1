@@ -8,6 +8,7 @@ Deadline: October 9 2023
 
 There are little time to best practices, suggestions:
 
+* Naturally to split the analysis into Frankes function- and the other dataset
 * When plotting, save temporary stuff in src/output_tmp when things are ready plot to _report/figures_
 * Keep everything in one branch _or_ make a personal branch, merge-conflicts will happen but we will deal with them
 * Lets follow the division-of-labor-plan below, use discord actively
