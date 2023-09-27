@@ -18,13 +18,13 @@ There are little time to best practices, suggestions:
 
 ## Division of labor-plan
 
-Part a: More or less done: Johan
-Part b: Needs debugging: Johan
-Part c: Needs debugging: Johan
-Part d: Freddy
-Part e: Under work: Johan
-Part f:Under work: Johan
-Part g:
+* Part a: More or less done: Johan
+* Part b: Needs debugging: Johan
+* Part c: Needs debugging: Johan
+* Part d: Freddy
+* Part e: Under work: Johan
+* Part f:Under work: Johan
+* Part g:
 
-Code cleaning in the end: 
-Lead on the report:?
+* Code cleaning in the end: 
+* Lead on the report:?
