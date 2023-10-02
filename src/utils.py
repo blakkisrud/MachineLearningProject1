@@ -81,7 +81,34 @@ def OLS(X, z):
     z_tilde = X.dot(beta)
     return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
 
+def ridge(X, z, lmb):
+
+    """
+    X: Design matrix
+    z: Data
+    lmb: Ridge parameter
+
+    Returns: MSE, R2, z_tilde, beta
+
+    """
+
+    beta = np.linalg.inv(X.T.dot(X) + lmb*np.eye(X.shape[1])).dot(X.T).dot(z)
+    z_tilde = X.dot(beta)
+
+    return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
+
 def plot_mse_and_r2(result_frame, output_dir, filename):
+
+    """
+    For plotting the MSE and R2 as a function of the polynomial degree.
+
+    For the OLS-analysis
+
+    Arguments:
+        result_frame (pandas.DataFrame): Contains the results from the regression analysis
+        output_dir (str): Output directory
+        filename (str): Filename of the plot
+    """
 
     fig = plt.figure()
     ax = fig.add_subplot(1,2,1)
@@ -108,7 +135,64 @@ def plot_mse_and_r2(result_frame, output_dir, filename):
 
     plt.savefig(os.path.join(output_dir, filename))
 
+def plot_mse_and_r2_ridge(result_frame, output_dir, filename):
 
+    """
+    Plot of the ridge regression analysis.
+    """
+
+    fig = plt.figure()
+    ax = fig.add_subplot(2,2,1)
+
+    sns.scatterplot(x = "Lambda",
+                    y = "MSE_train",
+                    data = result_frame,
+                    hue = "Polynomial")
+    
+    ax.set_xlabel("Lambda")
+    ax.set_ylabel("MSE")
+    ax.set_xscale("log")
+    
+    ax = fig.add_subplot(2,2,2)
+    
+    sns.scatterplot(x = "Lambda",
+                    y = "MSE_test",
+                    data = result_frame,
+                    hue = "Polynomial")
+
+    ax.set_xlabel("Lambda")
+    ax.set_ylabel("MSE")
+    ax.set_xscale("log")
+
+    ax.legend()
+
+    ax = fig.add_subplot(2,2,3)
+
+    sns.scatterplot(x = "Lambda",
+                    y = "R2_train",
+                    data = result_frame,
+                    hue = "Polynomial")
+    
+    ax.set_xlabel("Lambda")
+    ax.set_ylabel("R2")
+    ax.set_xscale("log")
+
+    ax = fig.add_subplot(2,2,4)
+
+    sns.scatterplot(x = "Lambda",
+                    y = "R2_test",
+                    data = result_frame,
+                    hue = "Polynomial")
+    
+    ax.set_xlabel("Lambda")
+    ax.set_ylabel("R2")
+    ax.set_xscale("log")
+
+    ax.legend()
+
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(output_dir, filename))
 
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
