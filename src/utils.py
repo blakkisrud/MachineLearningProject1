@@ -199,6 +199,33 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
 
         plt.savefig(os.path.join(output_dir, filename))
 
+def plot_bias_variance_tradeoff(result_frame, output_dir, filename):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+
+    ax.plot(result_frame["Polynomial"], 
+            result_frame["Bias"], 
+            label="Bias")
+    
+    ax.plot(result_frame["Polynomial"],
+            result_frame["Variance"],
+            label="Variance")
+    
+    ax.plot(result_frame["Polynomial"],
+            result_frame["Error"],
+            label="Error")
+    
+    ax.set_xlabel("Polynomial degree")
+
+    ax.legend()
+
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(output_dir, filename))
+
+
+
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
     Franke function, used for regression analysis.
