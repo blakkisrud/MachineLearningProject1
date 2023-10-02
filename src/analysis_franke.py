@@ -39,8 +39,8 @@ STEP_SIZE = 0.01  # Step size for sampling the Franke function
 # Running flags
 
 DO_PART_A = False
-DO_PART_B = True
-DO_PART_C = False
+DO_PART_B = False
+DO_PART_C = True
 DO_PART_D = False
 DO_PART_E = False
 DO_PART_F = False
@@ -93,7 +93,10 @@ def part_a():
 
     # Plot the results
 
-    project_utils.plot_mse_and_r2(results, OUTPUT_DIR, "franke_OLS_mse_r2.png")
+    project_utils.plot_mse_and_r2(results, 
+                                  OUTPUT_DIR, 
+                                  "franke_OLS_mse_r2.png",
+                                  "OLS")
 
 
 def part_b():
@@ -146,7 +149,65 @@ def part_b():
 
     # Plot the results
 
-    project_utils.plot_mse_and_r2_ridge(results, OUTPUT_DIR, "franke_ridge_mse_r2.png")
+    project_utils.plot_mse_and_r2(results, 
+                                  OUTPUT_DIR, 
+                                  "franke_ridge_mse_r2.png",
+                                  "Ridge")
+
+def part_c():
+
+    x = np.arange(0, 1, STEP_SIZE)
+    y = np.arange(0, 1, STEP_SIZE)
+
+    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+
+    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
+        x, y, franke_z, test_size=0.3)
+    
+    results = pd.DataFrame(
+        columns=["Polynomial", "MSE_train", "MSE_test", "R2_train", "R2_test", "Lambda"])
+    
+    for p in range(1,6):
+
+        X_train = project_utils.generate_design_matrix(x_train, y_train, p)
+        X_test = project_utils.generate_design_matrix(x_test, y_test, p)
+
+        for lmb in np.logspace(-8, -3, 12):
+            print(lmb)
+
+            clf = linear_model.Lasso(alpha=lmb, 
+                                     fit_intercept=False, 
+                                     max_iter=10000)
+
+            clf.fit(X_train, z_train)
+
+            z_pred_train = clf.predict(X_train)
+            z_pred_test = clf.predict(X_test)
+
+            MSE_train = mean_squared_error(z_train, z_pred_train)
+            MSE_test = mean_squared_error(z_test, z_pred_test)
+
+            R2_train = r2_score(z_train, z_pred_train)
+            R2_test = r2_score(z_test, z_pred_test)
+
+            result = {"Polynomial": p, "MSE_train": MSE_train,
+                      "MSE_test": MSE_test, "R2_train": R2_train, "R2_test": R2_test,
+                      "Lambda": lmb}
+            
+            results = results._append(result, ignore_index=True)
+
+    print(results)
+
+    # Plot the results
+
+    project_utils.plot_mse_and_r2(results,
+                                    OUTPUT_DIR,
+                                    "franke_lasso_mse_r2.png",
+                                    "Lasso")
+
+        
+
+
 
 # Run the parts
 
@@ -155,3 +216,5 @@ if DO_PART_A:
     part_a()
 if DO_PART_B:
     part_b()
+if DO_PART_C:
+    part_c()

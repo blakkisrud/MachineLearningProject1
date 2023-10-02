@@ -97,7 +97,7 @@ def ridge(X, z, lmb):
 
     return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
 
-def plot_mse_and_r2(result_frame, output_dir, filename):
+def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 
     """
     For plotting the MSE and R2 as a function of the polynomial degree.
@@ -135,64 +135,69 @@ def plot_mse_and_r2(result_frame, output_dir, filename):
 
     plt.savefig(os.path.join(output_dir, filename))
 
-def plot_mse_and_r2_ridge(result_frame, output_dir, filename):
+def plot_mse_and_r2(result_frame, output_dir, filename, type):
 
     """
-    Plot of the ridge regression analysis.
+    Plot of the ridge, LASSO or OLS regression analysis.
     """
 
-    fig = plt.figure()
-    ax = fig.add_subplot(2,2,1)
+    if type == "OLS":
+        plot_mse_and_r2_OLS(result_frame, output_dir, filename)
 
-    sns.scatterplot(x = "Lambda",
-                    y = "MSE_train",
-                    data = result_frame,
-                    hue = "Polynomial")
+    elif type == "Ridge" or "LASSO":
+
+        fig = plt.figure()
+        ax = fig.add_subplot(2,2,1)
+
+        sns.scatterplot(x = "Lambda",
+                        y = "MSE_train",
+                        data = result_frame,
+                        hue = "Polynomial")
     
-    ax.set_xlabel("Lambda")
-    ax.set_ylabel("MSE")
-    ax.set_xscale("log")
+        ax.set_xlabel("Lambda")
+        ax.set_ylabel("MSE")
+        ax.set_xscale("log")
     
-    ax = fig.add_subplot(2,2,2)
+        ax = fig.add_subplot(2,2,2)
     
-    sns.scatterplot(x = "Lambda",
-                    y = "MSE_test",
-                    data = result_frame,
-                    hue = "Polynomial")
+        sns.scatterplot(x = "Lambda",
+                        y = "MSE_test",
+                        data = result_frame,
+                        hue = "Polynomial")
 
-    ax.set_xlabel("Lambda")
-    ax.set_ylabel("MSE")
-    ax.set_xscale("log")
+        ax.set_xlabel("Lambda")
+        ax.set_ylabel("MSE")
+        ax.set_xscale("log")
 
-    ax.legend()
+        ax.legend()
 
-    ax = fig.add_subplot(2,2,3)
+        ax = fig.add_subplot(2,2,3)
 
-    sns.scatterplot(x = "Lambda",
-                    y = "R2_train",
-                    data = result_frame,
-                    hue = "Polynomial")
+        sns.scatterplot(x = "Lambda",
+                        y = "R2_train",
+                        data = result_frame,
+                        hue = "Polynomial")
     
-    ax.set_xlabel("Lambda")
-    ax.set_ylabel("R2")
-    ax.set_xscale("log")
+        ax.set_xlabel("Lambda")
+        ax.set_ylabel("R2")
+        ax.set_xscale("log")
 
-    ax = fig.add_subplot(2,2,4)
+        ax = fig.add_subplot(2,2,4)
 
-    sns.scatterplot(x = "Lambda",
-                    y = "R2_test",
-                    data = result_frame,
-                    hue = "Polynomial")
+        sns.scatterplot(x = "Lambda",
+                        y = "R2_test",
+                        data = result_frame,
+                        hue = "Polynomial")
     
-    ax.set_xlabel("Lambda")
-    ax.set_ylabel("R2")
-    ax.set_xscale("log")
+        ax.set_xlabel("Lambda")
+        ax.set_ylabel("R2")
+        ax.set_xscale("log")
 
-    ax.legend()
+        ax.legend()
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, filename))
+        plt.savefig(os.path.join(output_dir, filename))
 
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
