@@ -34,6 +34,82 @@ sns.set_style("whitegrid")
 # Functions
 
 
+def generate_design_matrix(x, y, n):
+    """
+    Here, x and y are the x and y values of the data points, respectively, and n is the polynomial degree.
+    """
+
+    if len(x.shape) > 1:
+        x = np.ravel(x)
+        y = np.ravel(y)
+
+    N = len(x)
+    l = int((n+1)*(n+2)/2)		# Number of elements in beta
+    X = np.ones((N, l))
+
+    for i in range(1, n+1):
+        q = int((i)*(i+1)/2)
+        for k in range(i+1):
+            X[:, q+k] = (x**(i-k))*(y**k)
+
+    return X
+
+
+def MSE(y, y_tilde):
+
+    n = len(y)
+    return np.sum((y - y_tilde)**2)/n
+
+
+def R2(y, y_tilde):
+
+    n = len(y)
+    return 1 - np.sum((y - y_tilde)**2)/np.sum((y - np.mean(y))**2)
+
+
+def OLS(X, z):
+
+    """
+    X: Design matrix
+    z: Data
+
+    Returns: MSE, R2, z_tilde, beta
+
+    """
+
+    beta = np.linalg.pinv(X.T.dot(X)).dot(X.T).dot(z)
+    z_tilde = X.dot(beta)
+    return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
+
+def plot_mse_and_r2(result_frame, output_dir, filename):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,2,1)
+
+    ax.plot(result_frame["Polynomial"], result_frame["MSE_train"], label="MSE train")
+    ax.plot(result_frame["Polynomial"], result_frame["MSE_test"], label="MSE test")
+
+    ax.set_xlabel("Polynomial degree")
+    ax.set_ylabel("MSE")
+
+    ax.legend()
+
+    ax = fig.add_subplot(1,2,2)
+
+    ax.plot(result_frame["Polynomial"], result_frame["R2_train"], label="R2 train")
+    ax.plot(result_frame["Polynomial"], result_frame["R2_test"], label="R2 test")
+
+    ax.set_xlabel("Polynomial degree")
+    ax.set_ylabel("R2")
+
+    ax.legend()
+
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(output_dir, filename))
+
+
+
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
     Franke function, used for regression analysis.

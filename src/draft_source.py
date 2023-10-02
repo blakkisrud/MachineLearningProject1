@@ -12,6 +12,8 @@ Script to perform analysis of the data from the first project.
 
 """
 
+
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -25,14 +27,13 @@ import os
 from sklearn import preprocessing
 import seaborn as sns
 from sklearn.utils import resample
-
 sns.set_style("whitegrid")
 
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 output_dir = 'output_tmp'
 
-def FrankeFunction(x,y, add_noise = False, sigma = 0.1):
+
+def FrankeFunction(x, y, add_noise=False, sigma=0.1):
 
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
     term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
@@ -45,8 +46,8 @@ def FrankeFunction(x,y, add_noise = False, sigma = 0.1):
     else:
         return term1 + term2 + term3 + term4
 
-def design_matrix(x, y, n):
 
+def design_matrix(x, y, n):
     """
     Here, x and y are the x and y values of the data points, respectively, and n is the polynomial degree.
     """
@@ -57,12 +58,12 @@ def design_matrix(x, y, n):
 
     N = len(x)
     l = int((n+1)*(n+2)/2)		# Number of elements in beta
-    X = np.ones((N,l))
+    X = np.ones((N, l))
 
-    for i in range(1,n+1):
+    for i in range(1, n+1):
         q = int((i)*(i+1)/2)
         for k in range(i+1):
-            X[:,q+k] = (x**(i-k))*(y**k)
+            X[:, q+k] = (x**(i-k))*(y**k)
 
     return X
 
@@ -72,7 +73,7 @@ def plot_franke(x, y, z):
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
     surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
+                           linewidth=0, antialiased=False)
     ax.set_zlim(-0.10, 1.40)
     ax.zaxis.set_major_locator(LinearLocator(10))
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
@@ -80,12 +81,13 @@ def plot_franke(x, y, z):
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
 
+
 def ilus_franke():
 
     # Make data.
     x = np.arange(0, 1, 0.05)
     y = np.arange(0, 1, 0.05)
-    x, y = np.meshgrid(x,y)
+    x, y = np.meshgrid(x, y)
 
     z = FrankeFunction(x, y)
 
@@ -98,25 +100,30 @@ def ilus_franke():
 
     plt.show()
 
+
 def MSE(y, y_tilde):
 
     n = len(y)
     return np.sum((y - y_tilde)**2)/n
 
+
 def error(y, y_tilde):
-    
-    return np.mean((y - y_tilde)**2) 
+
+    return np.mean((y - y_tilde)**2)
+
 
 def R2(y, y_tilde):
 
     n = len(y)
     return 1 - np.sum((y - y_tilde)**2)/np.sum((y - np.mean(y))**2)
 
+
 def OLS(X, z):
-    
-        beta = np.linalg.pinv(X.T.dot(X)).dot(X.T).dot(z)
-        z_tilde = X.dot(beta)
-        return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
+
+    beta = np.linalg.pinv(X.T.dot(X)).dot(X.T).dot(z)
+    z_tilde = X.dot(beta)
+    return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
+
 
 def part_a():
 
@@ -125,29 +132,30 @@ def part_a():
     x = np.arange(0, 1, 0.01)
     y = np.arange(0, 1, 0.01)
 
+    franke_noisy = FrankeFunction(x, y,
+                                  add_noise=True,
+                                  sigma=0.1)
 
-    franke_noisy = FrankeFunction(x, y, 
-                                  add_noise = True, 
-                                  sigma = 0.1)
-    
     # Split ito training and test data
 
-    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, franke_noisy, test_size=0.5)
+    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(
+        x, y, franke_noisy, test_size=0.5)
 
-    print(x_test.shape, x_train.shape, y_test.shape, y_train.shape, z_test.shape, z_train.shape)
+    print(x_test.shape, x_train.shape, y_test.shape,
+          y_train.shape, z_test.shape, z_train.shape)
 
     # Z here now is the noisy Franke function
 
     # Set up plotting
 
     fig_beta = plt.figure()
-    ax_beta = fig_beta.add_subplot(1,1,1)
+    ax_beta = fig_beta.add_subplot(1, 1, 1)
 
     fig_mse = plt.figure()
-    ax_mse = fig_mse.add_subplot(1,1,1)
+    ax_mse = fig_mse.add_subplot(1, 1, 1)
 
     fig_r2 = plt.figure()
-    ax_r2 = fig_r2.add_subplot(1,1,1)
+    ax_r2 = fig_r2.add_subplot(1, 1, 1)
 
     mse_vec = np.zeros(5)
     r2_vec = np.zeros(5)
@@ -171,38 +179,39 @@ def part_a():
         mse_test[p-1] = MSE_test
         r2_test[p-1] = R2_test
 
-        ax_beta.plot(np.arange(len(beta)), beta, label = 'p = %d' %p)
+        ax_beta.plot(np.arange(len(beta)), beta, label='p = %d' % p)
 
         ax_beta.set_xlabel(r'$\beta$')
         ax_beta.set_ylabel('Value')
 
         plt.legend()
 
-    fig_beta.savefig(os.path.join(output_dir,'beta.png'))
+    fig_beta.savefig(os.path.join(output_dir, 'beta.png'))
 
-    ax_mse.plot(np.arange(1, 6), mse_vec, 'o', label = 'MSE - training')
-    ax_mse.plot(np.arange(1, 6), mse_test, 'o', label = 'MSE - test')
+    ax_mse.plot(np.arange(1, 6), mse_vec, 'o', label='MSE - training')
+    ax_mse.plot(np.arange(1, 6), mse_test, 'o', label='MSE - test')
     ax_mse.set_xlabel('Polynomial degree')
     ax_mse.set_ylabel('MSE')
 
     plt.legend()
 
-    fig_mse.savefig(os.path.join(output_dir,'MSE.png'))
+    fig_mse.savefig(os.path.join(output_dir, 'MSE.png'))
 
-    ax_r2.plot(np.arange(1, 6), r2_vec, 'o', label = r'$R^2$ - training')
-    ax_r2.plot(np.arange(1, 6), r2_test, 'o', label = r'$R^2$ - test')
+    ax_r2.plot(np.arange(1, 6), r2_vec, 'o', label=r'$R^2$ - training')
+    ax_r2.plot(np.arange(1, 6), r2_test, 'o', label=r'$R^2$ - test')
 
     ax_r2.set_xlabel('Polynomial degree')
     ax_r2.set_ylabel(r'$R^2$')
 
     plt.legend()
 
-    fig_r2.savefig(os.path.join(output_dir,'R2.png'))
+    fig_r2.savefig(os.path.join(output_dir, 'R2.png'))
 
     print("OLS - MSE: ", mse_vec, mse_test)
     print("OLS - R2: ", r2_vec, r2_test)
 
-# Part B 
+# Part B
+
 
 def part_b():
 
@@ -211,24 +220,25 @@ def part_b():
     x = np.arange(0, 1, 0.0001)
     y = np.arange(0, 1, 0.0001)
 
+    franke_noisy = FrankeFunction(x, y,
+                                  add_noise=True,
+                                  sigma=0.1)
 
-    franke_noisy = FrankeFunction(x, y, 
-                                  add_noise = True, 
-                                  sigma = 0.1)
-    
     # Split ito training and test data
 
-    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, franke_noisy, test_size=0.5)
+    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(
+        x, y, franke_noisy, test_size=0.5)
 
-    print(x_test.shape, x_train.shape, y_test.shape, y_train.shape, z_test.shape, z_train.shape)
+    print(x_test.shape, x_train.shape, y_test.shape,
+          y_train.shape, z_test.shape, z_train.shape)
 
     figure_single_p_r2 = plt.figure()
-    ax_r2 = figure_single_p_r2.add_subplot(1,1,1)
+    ax_r2 = figure_single_p_r2.add_subplot(1, 1, 1)
 
     figure_single_p_mse = plt.figure()
-    ax_mse = figure_single_p_mse.add_subplot(1,1,1)
+    ax_mse = figure_single_p_mse.add_subplot(1, 1, 1)
 
-    for p in range(1,5):
+    for p in range(1, 5):
 
         X_p_train = design_matrix(x_train, y_train, p)
         X_p_test = design_matrix(x_test, y_test, p)
@@ -238,7 +248,7 @@ def part_b():
         print(I.shape)
 
         nlambda = 100
-        #lambda_vec = np.logspace(-5, 5, nlambda) # Try first searaing over a wide range of lambda values
+        # lambda_vec = np.logspace(-5, 5, nlambda) # Try first searaing over a wide range of lambda values
         lambda_vec = [1e-2]
 
         print(lambda_vec)
@@ -248,12 +258,12 @@ def part_b():
         R2_test = np.zeros(len(lambda_vec))
         MSE_test = np.zeros(len(lambda_vec))
 
-
         for i in range(len(lambda_vec)):
 
             lmb = lambda_vec[i]
 
-            beta_ridge = np.linalg.inv(X_p_train.T.dot(X_p_train) + lmb*I).dot(X_p_train.T).dot(z_train)
+            beta_ridge = np.linalg.inv(X_p_train.T.dot(
+                X_p_train) + lmb*I).dot(X_p_train.T).dot(z_train)
 
             ypred_train = X_p_train.dot(beta_ridge)
 
@@ -265,38 +275,42 @@ def part_b():
             MSE_test[i] = MSE(z_test, ypred_test)
             R2_test[i] = R2(z_test, ypred_test)
 
-        ax_r2.plot(np.log10(lambda_vec), R2_train, label = r'$R^2$ - training' + ' p = %d' %p)
-        ax_r2.plot(np.log10(lambda_vec), R2_test, label = r'$R^2$ - test' + ' p = %d' %p)
+        ax_r2.plot(np.log10(lambda_vec), R2_train,
+                   label=r'$R^2$ - training' + ' p = %d' % p)
+        ax_r2.plot(np.log10(lambda_vec), R2_test,
+                   label=r'$R^2$ - test' + ' p = %d' % p)
 
         ax_r2.set_xlabel(r'$\lambda$')
         ax_r2.set_ylabel(r'$R^2$')
 
         figure_single_p_r2.legend()
 
-        figure_single_p_r2.savefig(os.path.join(output_dir,'ridge_r2.png'))
+        figure_single_p_r2.savefig(os.path.join(output_dir, 'ridge_r2.png'))
 
-        ax_mse.plot(np.log10(lambda_vec), MSE_train, label = 'MSE - training' + ' p = %d' %p)
-        ax_mse.plot(np.log10(lambda_vec), MSE_test, label = 'MSE - test' + ' p = %d' %p)
+        ax_mse.plot(np.log10(lambda_vec), MSE_train,
+                    label='MSE - training' + ' p = %d' % p)
+        ax_mse.plot(np.log10(lambda_vec), MSE_test,
+                    label='MSE - test' + ' p = %d' % p)
 
         ax_mse.set_xlabel(r'$\lambda$')
 
         figure_single_p_mse.legend()
 
-
-        figure_single_p_mse.savefig(os.path.join(output_dir,'ridge_MSE.png'))
+        figure_single_p_mse.savefig(os.path.join(output_dir, 'ridge_MSE.png'))
 
     print(MSE_test, R2_test)
 
 # Now with lasso, lets simply use the one from sklearn
+
 
 def part_c():
 
     x = np.arange(0, 1, 0.0001)
     y = np.arange(0, 1, 0.0001)
 
-    z_noisy = FrankeFunction(x, y, add_noise = True, sigma = 0.01)
+    z_noisy = FrankeFunction(x, y, add_noise=True, sigma=0.01)
 
-    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, z_noisy, 
+    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, z_noisy,
                                                                          test_size=0.3,
                                                                          random_state=42)
 
@@ -305,7 +319,7 @@ def part_c():
     p = 4
 
     lambda_vec = np.logspace(-10, -5, 100)
-    #lambda_vec = [1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-2]
+    # lambda_vec = [1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-2]
 
     MSE_train = np.zeros(len(lambda_vec))
     R2_train = np.zeros(len(lambda_vec))
@@ -320,7 +334,9 @@ def part_c():
         X_p_train = design_matrix(x_train, y_train, p)
         X_p_test = design_matrix(x_test, y_test, p)
 
-        clf = linear_model.Lasso(alpha=lmb, fit_intercept=False, max_iter=10000) # When using 100000 - 0.97-0.98 is achieved
+        # When using 100000 - 0.97-0.98 is achieved
+        clf = linear_model.Lasso(
+            alpha=lmb, fit_intercept=False, max_iter=10000)
         clf.fit(X_p_train, z_train)
 
         ypred_train = clf.predict(X_p_train)
@@ -333,44 +349,44 @@ def part_c():
         R2_test[i] = R2(z_test, ypred_test)
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
 
     print(MSE_train, MSE_test)
     print(R2_train, R2_test)
 
-    ax.plot(np.log10(lambda_vec), MSE_train, label = 'MSE - training')
-    ax.plot(np.log10(lambda_vec), MSE_test, label = 'MSE - test')
+    ax.plot(np.log10(lambda_vec), MSE_train, label='MSE - training')
+    ax.plot(np.log10(lambda_vec), MSE_test, label='MSE - test')
 
     ax.set_xlabel(r'$\lambda$')
     ax.set_ylabel('MSE')
-    
+
     plt.legend()
 
-    fig.savefig(os.path.join(output_dir,"lasso_mse_" + str(p) + ".png"))
+    fig.savefig(os.path.join(output_dir, "lasso_mse_" + str(p) + ".png"))
 
     fig_r2 = plt.figure()
-    ax = fig_r2.add_subplot(1,1,1)
+    ax = fig_r2.add_subplot(1, 1, 1)
 
-    ax.plot(np.log10(lambda_vec), R2_train, label = r'$R^2$ - training')
-    ax.plot(np.log10(lambda_vec), R2_test, label = r'$R^2$ - test')
-
-
+    ax.plot(np.log10(lambda_vec), R2_train, label=r'$R^2$ - training')
+    ax.plot(np.log10(lambda_vec), R2_test, label=r'$R^2$ - test')
 
     ax.set_xlabel(r'$\lambda$')
     ax.set_ylabel(r'$R^2$')
 
-    fig_r2.savefig(os.path.join(output_dir,"lasso_r2_" + str(p) + ".png"))
+    fig_r2.savefig(os.path.join(output_dir, "lasso_r2_" + str(p) + ".png"))
 
 # Part c, but now with scaling
+
 
 def part_c_with_scaling():
 
     x = np.arange(0, 1, 0.0001)
     y = np.arange(0, 1, 0.0001)
 
-    z_noisy = FrankeFunction(x, y, add_noise = True, sigma = 0.01)
+    z_noisy = FrankeFunction(x, y, add_noise=True, sigma=0.01)
 
-    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, z_noisy, test_size=0.5)
+    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(
+        x, y, z_noisy, test_size=0.5)
 
     p = 4
 
@@ -400,45 +416,50 @@ def part_c_with_scaling():
         MSE_train[i] = MSE(z_train, ypred_train)
         R2_train[i] = R2(z_train, ypred_train)
 
-        ypred_test = clf.predict(scaler.transform(design_matrix(x_test, y_test, p)))
+        ypred_test = clf.predict(scaler.transform(
+            design_matrix(x_test, y_test, p)))
 
         MSE_test[i] = MSE(z_test, ypred_test)
         R2_test[i] = R2(z_test, ypred_test)
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
 
-    ax.plot(np.log10(lambda_vec), MSE_train, label = 'MSE - training')
-    ax.plot(np.log10(lambda_vec), MSE_test, label = 'MSE - test')
+    ax.plot(np.log10(lambda_vec), MSE_train, label='MSE - training')
+    ax.plot(np.log10(lambda_vec), MSE_test, label='MSE - test')
 
     ax.set_xlabel(r'$\lambda$')
     ax.set_ylabel('MSE')
 
     plt.legend()
 
-    fig.savefig(os.path.join(output_dir,"lasso_mse_scaled_" + str(p) + ".png"))
+    fig.savefig(os.path.join(
+        output_dir, "lasso_mse_scaled_" + str(p) + ".png"))
 
     fig_r2 = plt.figure()
-    ax = fig_r2.add_subplot(1,1,1)
+    ax = fig_r2.add_subplot(1, 1, 1)
 
-    ax.plot(np.log10(lambda_vec), R2_train, label = r'$R^2$ - training')
-    ax.plot(np.log10(lambda_vec), R2_test, label = r'$R^2$ - test')
+    ax.plot(np.log10(lambda_vec), R2_train, label=r'$R^2$ - training')
+    ax.plot(np.log10(lambda_vec), R2_test, label=r'$R^2$ - test')
 
     ax.set_xlabel(r'$\lambda$')
     ax.set_ylabel(r'$R^2$')
 
     fig_r2.legend()
 
-    fig_r2.savefig(os.path.join(output_dir,"lasso_r2_scaled_" + str(p) + ".png"))
+    fig_r2.savefig(os.path.join(
+        output_dir, "lasso_r2_scaled_" + str(p) + ".png"))
+
 
 def part_a_with_scaling():
 
     x = np.arange(0, 1, 0.0001)
     y = np.arange(0, 1, 0.0001)
 
-    z_noisy = FrankeFunction(x, y, add_noise = True, sigma = 0.01)
+    z_noisy = FrankeFunction(x, y, add_noise=True, sigma=0.01)
 
-    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(x, y, z_noisy, test_size=0.5)
+    x_test, x_train, y_test, y_train, z_test, z_train = train_test_split(
+        x, y, z_noisy, test_size=0.5)
 
     p = 4
 
@@ -450,31 +471,33 @@ def part_a_with_scaling():
     X_scaled = scaler.transform(X_p_train)
     X_test_scaled = X_p_test
 
-    beta_ols = np.linalg.pinv(X_scaled.T.dot(X_scaled)).dot(X_scaled.T).dot(z_train)
+    beta_ols = np.linalg.pinv(X_scaled.T.dot(
+        X_scaled)).dot(X_scaled.T).dot(z_train)
 
     ypred_train = X_scaled.dot(beta_ols)
 
     print(MSE(z_train, ypred_train), R2(z_train, ypred_train))
 
+
 def part_e():
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
 
     x = np.arange(0, 1, 0.01)
     y = np.arange(0, 1, 0.01)
 
-    z_noisy = FrankeFunction(x, y, add_noise = True, sigma = 0.1)
-    
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(x, y, z_noisy, 
+    z_noisy = FrankeFunction(x, y, add_noise=True, sigma=0.1)
+
+    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(x, y, z_noisy,
                                                                          test_size=0.3)
-    
+
     max_degree = 21
 
     MSE_train_vec = np.zeros(max_degree-1)
     MSE_test_vec = np.zeros(max_degree-1)
 
-    for p  in range(1,max_degree):
+    for p in range(1, max_degree):
 
         X_p1_train = design_matrix(x_train, y_train, p)
         X_p1_test = design_matrix(x_test, y_test, p)
@@ -484,15 +507,16 @@ def part_e():
         MSE_test_vec[p-1] = MSE(z_test, X_p1_test @ beta)
         MSE_train_vec[p-1] = MSE_train
 
-    ax.plot(np.arange(1,max_degree), MSE_train_vec, 'o', label = 'MSE - training')
-    ax.plot(np.arange(1,max_degree), MSE_test_vec, 'o', label = 'MSE - test')
+    ax.plot(np.arange(1, max_degree), MSE_train_vec,
+            'o', label='MSE - training')
+    ax.plot(np.arange(1, max_degree), MSE_test_vec, 'o', label='MSE - test')
 
     ax.set_xlabel('Complexicity')
     ax.set_ylabel('MSE')
 
     plt.legend()
 
-    fig.savefig(os.path.join(output_dir,"figure_2_11.png"))
+    fig.savefig(os.path.join(output_dir, "figure_2_11.png"))
 
     # Bootstrapig
 
@@ -519,32 +543,34 @@ def part_e():
 
         for k in range(k_bootstraps):
 
-            x_sample, y_sample, z_sample = resample(x_train, y_train, z_train, n_samples=n_samples)
+            x_sample, y_sample, z_sample = resample(
+                x_train, y_train, z_train, n_samples=n_samples)
 
             X_p1_sample = design_matrix(x_sample, y_sample, p)
 
-            MSE_train, R2_train, z_tilde_train, beta = OLS(X_p1_sample, z_sample)
+            MSE_train, R2_train, z_tilde_train, beta = OLS(
+                X_p1_sample, z_sample)
 
-            z_pred =  X_p1_test @ beta
+            z_pred = X_p1_test @ beta
 
             error_vec_bootstrap[k] = error(z_test, X_p1_test @ beta)
-            bias_vec_bootstrap[k] = np.mean( (z_test - np.mean(z_pred))**2 )
-            variance_vec_bootstrap[k] = np.mean( np.var(z_pred) )
+            bias_vec_bootstrap[k] = np.mean((z_test - np.mean(z_pred))**2)
+            variance_vec_bootstrap[k] = np.mean(np.var(z_pred))
 
         error_vec[p-1] = np.mean(error_vec_bootstrap)
         bias_vec[p-1] = np.mean(bias_vec_bootstrap)
         variance_vec[p-1] = np.mean(variance_vec_bootstrap)
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
 
-    ax.plot(np.arange(1,max_degree), error_vec, 'o', label = 'Error')
-    ax.plot(np.arange(1,max_degree), bias_vec, 'o', label = 'Bias')
-    ax.plot(np.arange(1,max_degree), variance_vec, 'o', label = 'Variance')
+    ax.plot(np.arange(1, max_degree), error_vec, 'o', label='Error')
+    ax.plot(np.arange(1, max_degree), bias_vec, 'o', label='Bias')
+    ax.plot(np.arange(1, max_degree), variance_vec, 'o', label='Variance')
 
     ax.set_xlabel('Complexicity')
     ax.set_ylabel('Error')
 
     plt.legend()
 
-    fig.savefig(os.path.join(output_dir,"error_bias_variance.png"))
+    fig.savefig(os.path.join(output_dir, "error_bias_variance.png"))
