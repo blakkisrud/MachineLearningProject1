@@ -1,0 +1,45 @@
+\documentclass[a4paper, table]{article}
+\input{General/Preamble} % Loads in the preamble 
+\input{General/Settings} % Loads in user defined
+\addbibresource{General/References.bib}
+
+\begin{document}
+
+% Inserts the front page
+\input{Chapters/0.Frontpage}
+\newpage
+
+% Generates a ToC without page number
+{\hypersetup{linkcolor=black} % Keeps the ToC black even with non-black linkcolor
+\tableofcontents\thispagestyle{empty}}
+\newpage
+
+
+\input{Chapters/01. Abstract}
+\input{Chapters/02. Introduction}
+\input{Chapters/03. Franke function}
+\input{Chapters/04. Geographic data}
+\input{Chapters/05. Conclusion}
+
+% Generates a list of symbols table
+%\input{Chapters/0. List of symbols}
+
+
+%\pagenumbering{arabic}
+
+
+
+
+% Creates references using the Biblatex 
+%\bibliographystyle{unsrt} % Different style of displaying references
+%\bibliography{General/References.bib}
+\newpage
+\printbibliography
+\newpage
+
+\appendix % Any section after this command will have a letter as an index
+
+% Adds an appendix entry
+
+
+\end{document}
