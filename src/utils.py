@@ -205,15 +205,15 @@ def plot_bias_variance_tradeoff(result_frame, output_dir, filename):
     ax = fig.add_subplot(1,1,1)
 
     ax.plot(result_frame["Polynomial"], 
-            result_frame["Bias"], 
+            result_frame["Bias"], '-o',
             label="Bias")
     
     ax.plot(result_frame["Polynomial"],
-            result_frame["Variance"],
+            result_frame["Variance"], '-o',
             label="Variance")
     
     ax.plot(result_frame["Polynomial"],
-            result_frame["Error"],
+            result_frame["Error"], '-o',
             label="Error")
     
     ax.set_xlabel("Polynomial degree")

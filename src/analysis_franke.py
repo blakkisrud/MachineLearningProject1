@@ -41,10 +41,10 @@ STEP_SIZE = 0.01  # Step size for sampling the Franke function
 
 DO_PART_A = False
 DO_PART_B = False
-DO_PART_C = True
+DO_PART_C = False
 DO_PART_D = False
 DO_PART_E = False
-DO_PART_F = False
+DO_PART_F = True
 
 # Helper functions
 
@@ -223,13 +223,13 @@ def part_e(step_size = STEP_SIZE):
         columns=["Polynomial", 
                  "Error", "Bias", "Variance"])
     
-    for p in range(1,6):
+    for p in range(1,9):
     
         X_test = project_utils.generate_design_matrix(x_test, 
                                                       y_test, p)
     
         k_bootstraps = 50
-        n_samples = 20
+        n_samples = 60
 
         bootstrap_MSE = np.zeros(k_bootstraps)
         bootstrap_bias = np.zeros(k_bootstraps)
@@ -271,15 +271,68 @@ def part_e(step_size = STEP_SIZE):
 
     print(results)
 
-def part_f(step_size = STEP_SIZE):
+def part_f(step_size = STEP_SIZE, k = 5):
+
+    """
+    k-fold cross validation
+
+    Implementation so unclever that I cant
+    have lifted it from somewhere.
+
+    """
 
     x = np.arange(0, 1, step_size)
     y = np.arange(0, 1, step_size)
 
     franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
 
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
-        x, y, franke_z, test_size=0.3)
+    idx = np.arange(len(x))
+
+    np.random.shuffle(idx) # Shuffle the indices
+
+    for p in range(1, 6):
+
+        print("Now doing polynomial degree: ", p)
+
+        # Set up k-fold cross validation
+
+        MSE_test_kfold = np.zeros(k)
+        R2_test_kfold = np.zeros(k)
+        MSE_train_kfold = np.zeros(k)
+        R2_train_kfold = np.zeros(k)
+
+        index_groups = np.array_split(idx, k)
+
+        for g, i in zip(index_groups, range(k)):
+
+            x_fold = x[g]
+            y_fold = y[g]
+            z_fold = franke_z[g]
+
+            x_train = x[~g]
+            y_train = y[~g]
+            z_train = franke_z[~g]
+
+            X_train = project_utils.generate_design_matrix(x_train, y_train, p)
+            X_test = project_utils.generate_design_matrix(x_fold, y_fold, p)
+
+            MSE_train, R2_train, z_tilde_train, beta_ols = project_utils.OLS(
+                X_train, z_train)
+
+            z_tilde_test = X_test.dot(beta_ols)
+
+            MSE_test = project_utils.MSE(z_fold, z_tilde_test)
+            R2_test = project_utils.R2(z_fold, z_tilde_test)
+
+            MSE_test_kfold[i] = MSE_test
+            R2_test_kfold[i] = R2_test
+            MSE_train_kfold[i] = MSE_train
+            R2_train_kfold[i] = R2_train
+
+        print("MSE test: ", np.mean(MSE_test_kfold))
+        print("R2 test: ", np.mean(R2_test_kfold))
+        print("MSE train: ", np.mean(MSE_train_kfold))
+        print("R2 train: ", np.mean(R2_train_kfold))
         
 # Run the parts
 
@@ -293,4 +346,6 @@ if DO_PART_C:
 if DO_PART_D:
     part_d()
 if DO_PART_E:
-    part_e(step_size=0.001)
+    part_e(step_size=0.01)
+if DO_PART_F:
+    part_f(step_size=0.01)
