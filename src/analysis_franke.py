@@ -39,11 +39,11 @@ STEP_SIZE = 0.01  # Step size for sampling the Franke function
 
 # Running flags
 
-DO_PART_A = True
+DO_PART_A = False
 DO_PART_B = False
 DO_PART_C = False
 DO_PART_D = False
-DO_PART_E = False
+DO_PART_E = True
 DO_PART_F = False
 
 # Helper functions
@@ -51,7 +51,7 @@ DO_PART_F = False
 # Functions for doing the analysis, one function per subtask
 
 
-def part_a(plot_prediction = False):
+def part_a(plot_prediction=False):
 
     x = np.arange(0, 1, STEP_SIZE)
     y = np.arange(0, 1, STEP_SIZE)
@@ -60,7 +60,7 @@ def part_a(plot_prediction = False):
 
     franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
     franke_z_flat = franke_z.ravel()
-    
+
     x = np.ravel(x)
     y = np.ravel(y)
 
@@ -70,20 +70,24 @@ def part_a(plot_prediction = False):
 
     idx_train, idx_test = train_test_split(
         index_vals, test_size=0.3, random_state=42)
-    
+
     # Save the train and test data sets as images
 
-    project_utils.plot_train_test_image(franke_z, idx_test, idx_train, OUTPUT_DIR, "franke_training_test.png")
+    project_utils.plot_train_test_image(
+        franke_z, idx_test, idx_train, OUTPUT_DIR, "franke_training_test.png")
 
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_test", "MSE_train", "R2_test", "R2_train"])
 
     for p in range(1, 12):
 
-        X_train = project_utils.generate_design_matrix(x[idx_train], y[idx_train], p)
-        X_test = project_utils.generate_design_matrix(x[idx_test], y[idx_test], p)
+        X_train = project_utils.generate_design_matrix(
+            x[idx_train], y[idx_train], p)
+        X_test = project_utils.generate_design_matrix(
+            x[idx_test], y[idx_test], p)
 
-        MSE_train, R2_train, z_pred_train, beta = project_utils.OLS(X_train, franke_z_flat[idx_train])
+        MSE_train, R2_train, z_pred_train, beta = project_utils.OLS(
+            X_train, franke_z_flat[idx_train])
 
         z_pred = X_test.dot(beta)
         z_test = franke_z_flat[idx_test]
@@ -95,8 +99,8 @@ def part_a(plot_prediction = False):
         R2_test = project_utils.R2(z_test, z_pred)
 
         result = {"Polynomial": p, "MSE_test": MSE_test,
-                    "MSE_train": MSE_train, "R2_test": R2_test, "R2_train": R2_train}
-        
+                  "MSE_train": MSE_train, "R2_test": R2_test, "R2_train": R2_train}
+
         results = results._append(result, ignore_index=True)
 
         if plot_prediction:
@@ -125,20 +129,22 @@ def part_a(plot_prediction = False):
             axes[1].imshow(Z_pred_whole_image, cmap="viridis")
             axes[1].set_title("Prediction")
 
-            axes[2].imshow((franke_z - Z_pred_whole_image.reshape(franke_z.shape)), cmap="viridis")
+            axes[2].imshow(
+                (franke_z - Z_pred_whole_image.reshape(franke_z.shape)), cmap="viridis")
             axes[2].set_title("Error")
 
-            plt.savefig(os.path.join(OUTPUT_DIR, "franke_prediction_p" + str(p) + ".png"))
+            plt.savefig(os.path.join(
+                OUTPUT_DIR, "franke_prediction_p" + str(p) + ".png"))
 
     print(results)
-    
+
     project_utils.plot_mse_and_r2(results,
                                   OUTPUT_DIR,
                                   "franke_OLS_mse_r2.png",
                                   "OLS")
 
     sys.exit()
-    
+
     img_train = np.zeros(index_vals.shape)
     img_test = np.zeros(index_vals.shape)
 
@@ -152,7 +158,7 @@ def part_a(plot_prediction = False):
 
     axes[0].imshow(franke_z, cmap="viridis")
     axes[0].set_title("Franke function")
-    
+
     axes[1].imshow(img_train, cmap="viridis")
     axes[1].set_title("Train data")
 
@@ -162,8 +168,6 @@ def part_a(plot_prediction = False):
     X = project_utils.generate_design_matrix(x, y, 2)
 
     print(X.shape)
-
-
 
     plt.show()
 
@@ -201,38 +205,50 @@ def part_a(plot_prediction = False):
     # Plot the results
 
 
-
 def part_b():
 
     x = np.arange(0, 1, STEP_SIZE)
     y = np.arange(0, 1, STEP_SIZE)
 
+    x, y = np.meshgrid(x, y)
+
     franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    franke_z_flat = franke_z.ravel()
 
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
-        x, y, franke_z, test_size=0.3)
+    x = np.ravel(x)
+    y = np.ravel(y)
 
-    print("Size of the test and training data sets:")
+    index_vals = np.array(range(np.prod(franke_z.shape)))
 
-    print(x_test.shape, x_train.shape, y_test.shape,
-          y_train.shape, z_test.shape, z_train.shape)
+    idx_train, idx_test = train_test_split(
+        index_vals, test_size=0.3, random_state=42)
+
+    # print("Size of the test and training data sets:")
+
+    # print(x_test.shape, x_train.shape, y_test.shape,
+    #      y_train.shape, z_test.shape, z_train.shape)
 
     # Set up pandas frame for keeping scare of the results
 
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_train", "MSE_test", "R2_train", "R2_test", "Lambda"])
 
-    for p in range(1, 12):
+    for p in range(1, 9):
 
         print("Polynomial degree: ", p)
 
-        X_train = project_utils.generate_design_matrix(x_train, y_train, p)
-        X_test = project_utils.generate_design_matrix(x_test, y_test, p)
+        X_train = project_utils.generate_design_matrix(
+            x[idx_train], y[idx_train], p)
+        X_test = project_utils.generate_design_matrix(
+            x[idx_test], y[idx_test], p)
+
+        z_test = franke_z_flat[idx_test]
+        z_train = franke_z_flat[idx_train]
 
         print("Size of X-matrix for training and testing:")
         print(X_train.shape, X_test.shape)
 
-        for lmb in np.logspace(-8, -3, 20):
+        for lmb in np.logspace(-3, 3, 20):
 
             MSE_train, R2_train, z_tilde_train, beta_ols = project_utils.ridge(
                 X_train, z_train, lmb)
@@ -263,20 +279,33 @@ def part_c():
     x = np.arange(0, 1, STEP_SIZE)
     y = np.arange(0, 1, STEP_SIZE)
 
-    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    x, y = np.meshgrid(x, y)
 
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
-        x, y, franke_z, test_size=0.3)
+    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    franke_z_flat = franke_z.ravel()
+
+    x = np.ravel(x)
+    y = np.ravel(y)
+
+    index_vals = np.array(range(np.prod(franke_z.shape)))
+
+    idx_train, idx_test = train_test_split(
+        index_vals, test_size=0.3, random_state=42)
 
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_train", "MSE_test", "R2_train", "R2_test", "Lambda"])
 
     for p in range(1, 6):
 
-        X_train = project_utils.generate_design_matrix(x_train, y_train, p)
-        X_test = project_utils.generate_design_matrix(x_test, y_test, p)
+        X_train = project_utils.generate_design_matrix(
+            x[idx_train], y[idx_train], p)
+        X_test = project_utils.generate_design_matrix(
+            x[idx_test], y[idx_test], p)
 
-        for lmb in np.logspace(-12, 2, 12):
+        z_train = franke_z_flat[idx_train]
+        z_test = franke_z_flat[idx_test]
+
+        for lmb in np.logspace(-6, 3, 12):
             print(lmb)
 
             clf = linear_model.Lasso(alpha=lmb,
@@ -319,10 +348,21 @@ def part_e(step_size=STEP_SIZE):
     x = np.arange(0, 1, step_size)
     y = np.arange(0, 1, step_size)
 
-    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    x, y = np.meshgrid(x, y)
 
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
-        x, y, franke_z, test_size=0.3)
+    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    franke_z_flat = franke_z.ravel()
+
+    x = np.ravel(x)
+    y = np.ravel(y)
+
+    index_vals = np.array(range(np.prod(franke_z.shape)))
+
+    idx_train, idx_test = train_test_split(
+        index_vals, test_size=0.3, random_state=42)
+
+    # x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
+    #    x, y, franke_z, test_size=0.3)
 
     results = pd.DataFrame(
         columns=["Polynomial",
@@ -330,11 +370,19 @@ def part_e(step_size=STEP_SIZE):
 
     for p in range(1, 9):
 
-        X_test = project_utils.generate_design_matrix(x_test,
-                                                      y_test, p)
+        X_test = project_utils.generate_design_matrix(
+            x[idx_test], y[idx_test], p)
+        z_test = franke_z_flat[idx_test]
 
-        k_bootstraps = 50
-        n_samples = 60
+        x_train = x[idx_train]
+        y_train = y[idx_train]
+        z_train = franke_z_flat[idx_train]
+
+        k_bootstraps = 30
+        n_samples = 20000
+
+        print("The relativel size of the bootstrap samples: ",
+              n_samples/len(x_train))
 
         bootstrap_MSE = np.zeros(k_bootstraps)
         bootstrap_bias = np.zeros(k_bootstraps)
