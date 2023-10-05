@@ -574,3 +574,21 @@ def part_e():
     plt.legend()
 
     fig.savefig(os.path.join(output_dir, "error_bias_variance.png"))
+
+
+def plot_vispy_terrain(terrain):
+    # print(vispy.sys_info())
+    from vispy import scene, app
+    # from vispy.plot import Fig
+
+    canvas = scene.SceneCanvas()
+    canvas.size = 800, 600
+    canvas.show()
+
+    view = canvas.central_widget.add_view()
+
+    image = scene.visuals.Image(terrain, parent=view.scene)
+
+    view.camera = scene.PanZoomCamera(aspect=1)
+    # ax_left.plot(data)
+    # ax_right.histogram(data[1])
