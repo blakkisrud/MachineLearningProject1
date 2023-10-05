@@ -281,3 +281,26 @@ def FrankeFunction(x, y, add_noise=False, sigma=0.1):
         return term1 + term2 + term3 + term4 + noise
     else:
         return term1 + term2 + term3 + term4
+
+
+def show_terrain_partitions(terrain_shape, idx_train, idx_test, values_train, values_test):
+    img_train = np.empty(shape=np.prod(terrain_shape))
+    img_test = np.empty(shape=np.prod(terrain_shape))
+
+    img_train[idx_train] = values_train.ravel()
+    img_test[idx_test] = values_test.ravel()
+
+    img_train = img_train.reshape(terrain_shape)
+    img_test = img_test.reshape(terrain_shape)
+
+    fig, ax = plt.subplots(ncols=3)
+    ax[0].imshow(img_train)
+    ax[0].set_title("Train")
+    ax[1].imshow(img_test)
+    ax[1].set_title("Test")
+    ax[2].imshow(img_train + img_test)
+    ax[2].set_title("Train + test")
+    [axi.axis("off") for axi in ax]
+
+    pass
+
