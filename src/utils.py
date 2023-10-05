@@ -16,18 +16,22 @@ import utils as project_utils
 
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+
 import numpy as np
 from random import random, seed
 import sys
-from sklearn.model_selection import train_test_split
+
+from sklearn.model_selection import train_test_split, KFold
 from sklearn import linear_model
-import os
 from sklearn import preprocessing
-import seaborn as sns
 from sklearn.utils import resample
+
+import os
+import seaborn as sns
 
 sns.set_style("whitegrid")
 
@@ -283,24 +287,295 @@ def FrankeFunction(x, y, add_noise=False, sigma=0.1):
         return term1 + term2 + term3 + term4
 
 
-def show_terrain_partitions(terrain_shape, idx_train, idx_test, values_train, values_test):
-    img_train = np.empty(shape=np.prod(terrain_shape))
-    img_test = np.empty(shape=np.prod(terrain_shape))
+def get_terrain_data():
+    # add all terrain data, with names, here
+    from imageio.v3 import imread
 
-    img_train[idx_train] = values_train.ravel()
-    img_test[idx_test] = values_test.ravel()
+    for terrain, TERRAIN_NAME in zip([imread("SRTM_data_Norway_1.tif"), imread("SRTM_data_Norway_2.tif"), imread("oslo.tif"), imread("eide.tif")],
+                                    ["terrain1", "terrain2", "oslo", "eide"]):
+        yield terrain, TERRAIN_NAME
 
-    img_train = img_train.reshape(terrain_shape)
-    img_test = img_test.reshape(terrain_shape)
 
-    fig, ax = plt.subplots(ncols=3)
-    ax[0].imshow(img_train)
-    ax[0].set_title("Train")
-    ax[1].imshow(img_test)
-    ax[1].set_title("Test")
-    ax[2].imshow(img_train + img_test)
-    ax[2].set_title("Train + test")
-    [axi.axis("off") for axi in ax]
+class TerrainAnalyser():
+    def __init__(self, terrain, terrain_name,
+                 output_dir="", calculate_scores=True, split_on_chunk=False,
+                 k_val_split=3, avals=np.logspace(0, 3, 4), pvals=list(range(2)),
+                 verbose=True):
 
-    pass
+        self.terrain = terrain
+        self.terrain_name = terrain_name
 
+        self.index_vals = np.array(range(np.prod(terrain.shape)))
+        self.terrain_values = self.terrain.flatten()
+        self.split_on_chunk = split_on_chunk        # Holds-out partition of image for test if True, else makes random pixels test
+        self.verbose = verbose
+
+        self.test_set_ratio = 0.20
+        self.random_state = 42
+
+        self.make_train_test()
+        self.normalize()
+
+        self.output_dir = output_dir
+        self.path_scores_train = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_train.npy")
+        self.path_scores_val = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_val.npy")
+
+
+        self.calculate_scores = calculate_scores    # Loads validation-scores, for HP tuning of alpha and p, from .npy file if false
+
+        self.k_val_split = k_val_split  # number of validation splits, of training set, using k-fold
+        self.avals = avals
+        self.pvals = pvals
+
+        self.model_func = linear_model.Ridge
+
+
+    def make_train_test(self):
+        if self.split_on_chunk:
+            self.idx_train = self.index_vals[:int(len(self.index_vals) * (1 - self.test_set_ratio))]
+            self.idx_test = self.index_vals[max(self.idx_train) + 1:]
+
+        else:
+            self.idx_train, self.idx_test = train_test_split(self.index_vals, test_size=self.test_set_ratio, random_state=self.random_state)
+
+
+        self.values_train = self.terrain_values[self.idx_train]
+        self.values_test = self.terrain_values[self.idx_test]
+
+
+
+        self.x_train = self.idx_train.reshape(-1, 1) % self.terrain.shape[0]
+        self.y_train = self.idx_train.reshape(-1, 1) // self.terrain.shape[0]
+        self.x_test = self.idx_test.reshape(-1, 1) % self.terrain.shape[0]
+        self.y_test = self.idx_test.reshape(-1, 1) // self.terrain.shape[0]
+
+
+        if self.verbose:
+            print(f"\tcreated train / test sets from {'''image partitions''' if self.split_on_chunk else '''random pixels'''}", end=" ")
+            print("of sizes", self.idx_train.shape, self.idx_test.shape)
+        return 1
+
+
+    def normalize(self):
+        # Standard-score scaling image gray-levels
+        # Min-max scaling coordinates to -1, 1
+        # Fit to train data, only transform test
+        self.scaler_img = preprocessing.StandardScaler()
+        self.scaler_x = preprocessing.MinMaxScaler(feature_range=(-1, 1))
+        self.scaler_y = preprocessing.MinMaxScaler(feature_range=(-1, 1))
+
+        self.values_train = self.scaler_img.fit_transform(self.values_train.reshape(-1, 1))
+        self.values_test = self.scaler_img.transform(self.values_test.reshape(-1, 1))
+
+        self.x_train = self.scaler_x.fit_transform(self.x_train).reshape(-1)
+        self.y_train = self.scaler_y.fit_transform(self.y_train).reshape(-1)
+
+        self.x_test = self.scaler_x.transform(self.x_test).reshape(-1)
+        self.y_test = self.scaler_y.transform(self.y_test).reshape(-1)
+
+        if self.verbose:
+            print("\timage data normalized by standard-scaling, xy-coordinates by minmax-scaling, using values from training data")
+
+        return 1
+
+
+    def show_terrain_partitions(self, showplt=True):
+        # TODO: include showing validation partitions here
+        splitmode = "chunk" if self.split_on_chunk else "pixel" # for naming
+
+        # plot_train_test_image(self.terrain, self.idx_test, self.idx_train, output_dir=self.output_dir, filename=f"train_test_split_{self.terrain_name}_{splitmode}")
+
+
+        terrain_shape = self.terrain.shape
+        fig, ax = plt.subplots(ncols=self.k_val_split)
+
+        for ki, idx_train_k, idx_val_k, values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k in self.get_validation_set(return_index=True):
+            img_val = np.empty(shape=np.prod(terrain_shape))
+
+            img_val[idx_val_k] = values_val_k.reshape(-1)
+            img_val = img_val.reshape(terrain_shape)
+
+            ax[ki].imshow(img_val)
+            ax[ki].set_title(f"Fold {ki + 1}")
+            ax[ki].axis("off")
+
+
+        img_train = np.empty(shape=np.prod(terrain_shape))
+        img_test = np.empty(shape=np.prod(terrain_shape))
+
+        img_train[self.idx_train] = self.values_train.ravel()
+        img_test[self.idx_test] = self.values_test.ravel()
+
+        img_train = img_train.reshape(terrain_shape)
+        img_test = img_test.reshape(terrain_shape)
+
+        fig, ax = plt.subplots(ncols=3)
+        ax[0].imshow(img_train)
+        ax[0].set_title("Train")
+        ax[1].imshow(img_test)
+        ax[1].set_title("Test")
+        ax[2].imshow(img_train + img_test)
+        ax[2].set_title("Train + test")
+        [axi.axis("off") for axi in ax]
+
+
+        plt.show() if showplt else 0
+
+
+        return 1
+
+
+    def get_validation_set(self, return_index=False):
+        num_px_per_fold = len(self.x_train) // self.k_val_split
+
+        if not self.split_on_chunk:
+
+            # Splits by chunk if shuffle = False :))
+            kfold_splitter = KFold(n_splits=self.k_val_split, random_state=self.random_state, shuffle=True)
+            kfold_splits = kfold_splitter.split(X=self.idx_train)
+
+
+        for ki in range(self.k_val_split):
+            if self.split_on_chunk:
+                idx_val_k = self.idx_train[num_px_per_fold * ki:len(self.idx_train) - num_px_per_fold * (self.k_val_split - ki - 1)]
+                idx_train_k = np.setdiff1d(self.idx_train, idx_val_k)
+            else:
+                # print(num_px_per_fold, len(self.x_train) - num_px_per_fold)
+                idx_train_k, idx_val_k = next(kfold_splits)
+                # print(idx_train_k.shape, idx_val_k.shape)
+
+            values_train_k = self.scaler_img.transform(self.terrain_values[idx_train_k].reshape(-1, 1))
+            values_val_k = self.scaler_img.transform(self.terrain_values[idx_val_k].reshape(-1, 1))
+
+            print(f"\n{self.k_val_split}-fold cross-validation: ki={ki}")
+            print(idx_train_k.shape, idx_val_k.shape)
+
+            x_train_k = idx_train_k.reshape(-1, 1) % self.terrain.shape[0]
+            y_train_k = idx_train_k.reshape(-1, 1) // self.terrain.shape[0]
+            x_val_k = idx_val_k.reshape(-1, 1) % self.terrain.shape[0]
+            y_val_k = idx_val_k.reshape(-1, 1) // self.terrain.shape[0]
+
+            x_train_k = self.scaler_x.transform(x_train_k).reshape(-1)
+            y_train_k = self.scaler_y.transform(y_train_k).reshape(-1)
+            x_val_k = self.scaler_x.transform(x_val_k).reshape(-1)
+            y_val_k = self.scaler_y.transform(y_val_k).reshape(-1)
+
+            if return_index:
+                yield (ki, idx_train_k, idx_val_k,
+                       values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k)
+            else:
+                yield ki, values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k
+
+
+    def calculate_k_fold_cross_validated(self):
+
+        mse_train_scores = np.ones(shape=(self.k_val_split, len(self.pvals), len(self.avals)))
+        mse_val_scores = np.ones(shape=(self.k_val_split, len(self.pvals), len(self.avals)))
+
+        for ki, values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k in self.get_validation_set():
+
+            for pi, p in enumerate(self.pvals):
+
+                X_train_k = generate_design_matrix(x_train_k, y_train_k, n=p)
+                X_val_k = generate_design_matrix(x_val_k, y_val_k, n=p)
+                print(X_train_k.shape, X_val_k.shape)
+
+                for ai, a in enumerate(self.avals):
+                    print(f"p={p}, a={a:.2e}", end="\t")
+                    m = self.model_func(fit_intercept=False, alpha=a)
+                    m.fit(X_train_k, values_train_k)
+
+                    zhat_train = m.predict(X_train_k)
+                    zhat_val = m.predict(X_val_k)
+
+                    r2_train, r2_val = r2_score(values_train_k, zhat_train), r2_score(values_val_k, zhat_val)
+                    mse_train, mse_val = mean_squared_error(values_train_k, zhat_train), mean_squared_error(
+                        values_val_k, zhat_val)
+                    print(f"train / val r2 = {r2_train:.3g} / {r2_val:.3g} \t mse = {mse_train:.3g} / {mse_val:.3g}")
+
+                    mse_train_scores[ki, pi, ai] = mse_train
+                    mse_val_scores[ki, pi, ai] = mse_val
+                    # scores.loc[]
+
+        np.save(self.path_scores_train, mse_train_scores)
+        np.save(self.path_scores_val, mse_val_scores)
+
+        print("SAVED TRAIN / VALIDATION SCORES IN ", self.output_dir)
+
+        return 1
+
+
+    def load_k_fold_cross_validated(self):
+        # mse_train_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_train.npy"), allow_pickle=True)
+        # mse_val_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_val.npy"), allow_pickle=True)
+        self.mse_train_scores = np.load(self.path_scores_train, allow_pickle=True)
+        self.mse_val_scores = np.load(self.path_scores_val, allow_pickle=True)
+
+        self.mse_train_mean = np.mean(self.mse_train_scores, axis=0)
+        self.mse_val_mean = np.mean(self.mse_val_scores, axis=0)
+
+        print("LOADED TRAIN / VALIDATION SCORES FROM ", self.output_dir, self.mse_train_scores.shape, self.mse_val_scores.shape)
+        return self.mse_train_scores, self.mse_val_scores
+
+
+    def show_k_fold_cross_validated_scores(self, showplt=True):
+        # must be run after loader / calculator for obvious reasons
+
+        vmin = np.min([self.mse_train_mean, self.mse_val_mean])
+
+        fig, ax = plt.subplots(ncols=2, sharey=True)
+        i = 0
+
+        for vals, name in zip([self.mse_train_mean, self.mse_val_mean], ["Train", "Val"]):
+            # vmin = np.min(vals)
+            # vmax = np.max(vals)
+            im = ax[i].imshow(vals.T, vmin=vmin, vmax=1, cmap="RdYlGn_r")
+
+            # TODO: fix colobars
+            divider = make_axes_locatable(ax[i])
+            # cax = divider.append_axes('right', size='5%', pad=0.05)
+            # fig.colorbar(im, ax[i])
+
+            ax[i].set_title(name)
+            ax[i].set_xlabel("p")
+            ax[i].set_ylabel("alpha")
+            ax[i].set_yticks(list(range(len(self.avals))), [f"{a:.2e}" for a in self.avals])
+            ax[i].set_xticks(list(range(len(self.pvals))), self.pvals)
+            ax[i].grid(0)
+            i += 1
+
+        fig.tight_layout()
+        fig.suptitle(self.terrain_name)
+        plt.savefig(os.path.join(self.output_dir,
+                                 f"cv_mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}"))
+        plt.show() if showplt else 0
+
+        return 1
+
+
+    def find_optimal_hps(self):
+        # Find MSE minima - optimal alpha, p
+
+        idx_opt = np.unravel_index(np.argmin(self.mse_val_mean, axis=None), self.mse_val_mean.shape)
+        self.p_opt, self.alpha_opt = self.pvals[idx_opt[0]], self.avals[idx_opt[1]]
+        print(f"Optimal p={self.p_opt}, alpha={self.alpha_opt:.3e} (minimal validation MSE = {np.min(self.mse_val_mean):.3e})")
+
+        return self.p_opt, self.alpha_opt
+
+
+    def evaluate_on_test(self):
+        # Test on hold-out data
+        m = self.model_func(fit_intercept=False, alpha=self.alpha_opt)
+        X_train = generate_design_matrix(self.x_train, self.y_train, n=self.p_opt)
+        X_test = generate_design_matrix(self.x_test, self.y_test, n=self.p_opt)
+
+        m.fit(X_train, self.values_train)
+        zhat_train = m.predict(X_train)
+        zhat_test = m.predict(X_test)
+
+        r2_train, r2_test = r2_score(self.values_train, zhat_train), r2_score(self.values_test, zhat_test)
+        mse_train, mse_test = mean_squared_error(self.values_train, zhat_train), mean_squared_error(self.values_test, zhat_test)
+        print(f"R2 train={r2_train:.3e}, test={r2_test:.3e}\tMSE train={mse_train:.3e}, test={mse_test:.3e}")
+
+
+        return 1
