@@ -39,27 +39,133 @@ STEP_SIZE = 0.01  # Step size for sampling the Franke function
 
 # Running flags
 
-DO_PART_A = False
+DO_PART_A = True
 DO_PART_B = False
 DO_PART_C = False
 DO_PART_D = False
 DO_PART_E = False
-DO_PART_F = True
+DO_PART_F = False
 
 # Helper functions
 
 # Functions for doing the analysis, one function per subtask
 
 
-def part_a():
+def part_a(plot_prediction = False):
 
     x = np.arange(0, 1, STEP_SIZE)
     y = np.arange(0, 1, STEP_SIZE)
 
-    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    x, y = np.meshgrid(x, y)
 
-    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
-        x, y, franke_z, test_size=0.3)
+    franke_z = project_utils.FrankeFunction(x, y, add_noise=True)
+    franke_z_flat = franke_z.ravel()
+    
+    x = np.ravel(x)
+    y = np.ravel(y)
+
+    index_vals = np.array(range(np.prod(franke_z.shape)))
+
+    print(index_vals.shape)
+
+    idx_train, idx_test = train_test_split(
+        index_vals, test_size=0.3, random_state=42)
+    
+    # Save the train and test data sets as images
+
+    project_utils.plot_train_test_image(franke_z, idx_test, idx_train, OUTPUT_DIR, "franke_training_test.png")
+
+    results = pd.DataFrame(
+        columns=["Polynomial", "MSE_test", "MSE_train", "R2_test", "R2_train"])
+
+    for p in range(1, 12):
+
+        X_train = project_utils.generate_design_matrix(x[idx_train], y[idx_train], p)
+        X_test = project_utils.generate_design_matrix(x[idx_test], y[idx_test], p)
+
+        MSE_train, R2_train, z_pred_train, beta = project_utils.OLS(X_train, franke_z_flat[idx_train])
+
+        z_pred = X_test.dot(beta)
+        z_test = franke_z_flat[idx_test]
+
+        z_train = franke_z_flat[idx_train]
+
+        MSE_test = project_utils.MSE(z_test, z_pred)
+
+        R2_test = project_utils.R2(z_test, z_pred)
+
+        result = {"Polynomial": p, "MSE_test": MSE_test,
+                    "MSE_train": MSE_train, "R2_test": R2_test, "R2_train": R2_train}
+        
+        results = results._append(result, ignore_index=True)
+
+        if plot_prediction:
+
+            X_whole_image = project_utils.generate_design_matrix(x, y, p)
+
+            Z_pred_whole_image = X_whole_image.dot(beta)
+
+            Z_pred_whole_image = Z_pred_whole_image.reshape(franke_z.shape)
+
+            img_predicton = np.zeros(index_vals.shape)
+
+            img_predicton[idx_test] = z_pred
+
+            img_predicton = img_predicton.reshape(franke_z.shape)
+
+            # Plot the prediction
+
+            fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+
+            fig.suptitle("Polynomial degree: " + str(p))
+
+            axes[0].imshow(franke_z, cmap="viridis")
+            axes[0].set_title("Franke function")
+
+            axes[1].imshow(Z_pred_whole_image, cmap="viridis")
+            axes[1].set_title("Prediction")
+
+            axes[2].imshow((franke_z - Z_pred_whole_image.reshape(franke_z.shape)), cmap="viridis")
+            axes[2].set_title("Error")
+
+            plt.savefig(os.path.join(OUTPUT_DIR, "franke_prediction_p" + str(p) + ".png"))
+
+    print(results)
+    
+    project_utils.plot_mse_and_r2(results,
+                                  OUTPUT_DIR,
+                                  "franke_OLS_mse_r2.png",
+                                  "OLS")
+
+    sys.exit()
+    
+    img_train = np.zeros(index_vals.shape)
+    img_test = np.zeros(index_vals.shape)
+
+    img_train[idx_train] = franke_z_flat[idx_train]
+    img_test[idx_test] = franke_z_flat[idx_test]
+
+    img_train = img_train.reshape(franke_z.shape)
+    img_test = img_test.reshape(franke_z.shape)
+
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+
+    axes[0].imshow(franke_z, cmap="viridis")
+    axes[0].set_title("Franke function")
+    
+    axes[1].imshow(img_train, cmap="viridis")
+    axes[1].set_title("Train data")
+
+    axes[2].imshow(img_test, cmap="viridis")
+    axes[2].set_title("Test data")
+
+    X = project_utils.generate_design_matrix(x, y, 2)
+
+    print(X.shape)
+
+
+
+    plt.show()
 
     print("Size of the test and training data sets:")
     print(x_test.shape, x_train.shape, y_test.shape,
@@ -94,10 +200,6 @@ def part_a():
 
     # Plot the results
 
-    project_utils.plot_mse_and_r2(results, 
-                                  OUTPUT_DIR, 
-                                  "franke_OLS_mse_r2.png",
-                                  "OLS")
 
 
 def part_b():
@@ -150,10 +252,11 @@ def part_b():
 
     # Plot the results
 
-    project_utils.plot_mse_and_r2(results, 
-                                  OUTPUT_DIR, 
+    project_utils.plot_mse_and_r2(results,
+                                  OUTPUT_DIR,
                                   "franke_ridge_mse_r2.png",
                                   "Ridge")
+
 
 def part_c():
 
@@ -164,11 +267,11 @@ def part_c():
 
     x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
         x, y, franke_z, test_size=0.3)
-    
+
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_train", "MSE_test", "R2_train", "R2_test", "Lambda"])
-    
-    for p in range(1,6):
+
+    for p in range(1, 6):
 
         X_train = project_utils.generate_design_matrix(x_train, y_train, p)
         X_test = project_utils.generate_design_matrix(x_test, y_test, p)
@@ -176,8 +279,8 @@ def part_c():
         for lmb in np.logspace(-12, 2, 12):
             print(lmb)
 
-            clf = linear_model.Lasso(alpha=lmb, 
-                                     fit_intercept=False, 
+            clf = linear_model.Lasso(alpha=lmb,
+                                     fit_intercept=False,
                                      max_iter=10000)
 
             clf.fit(X_train, z_train)
@@ -194,7 +297,7 @@ def part_c():
             result = {"Polynomial": p, "MSE_train": MSE_train,
                       "MSE_test": MSE_test, "R2_train": R2_train, "R2_test": R2_test,
                       "Lambda": lmb}
-            
+
             results = results._append(result, ignore_index=True)
 
     print(results)
@@ -202,14 +305,16 @@ def part_c():
     # Plot the results
 
     project_utils.plot_mse_and_r2(results,
-                                    OUTPUT_DIR,
-                                    "franke_lasso_mse_r2.png",
-                                    "Lasso")
+                                  OUTPUT_DIR,
+                                  "franke_lasso_mse_r2.png",
+                                  "Lasso")
+
 
 def part_d():
     print("Pen and paper")
 
-def part_e(step_size = STEP_SIZE):
+
+def part_e(step_size=STEP_SIZE):
 
     x = np.arange(0, 1, step_size)
     y = np.arange(0, 1, step_size)
@@ -218,16 +323,16 @@ def part_e(step_size = STEP_SIZE):
 
     x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
         x, y, franke_z, test_size=0.3)
-    
+
     results = pd.DataFrame(
-        columns=["Polynomial", 
+        columns=["Polynomial",
                  "Error", "Bias", "Variance"])
-    
-    for p in range(1,9):
-    
-        X_test = project_utils.generate_design_matrix(x_test, 
+
+    for p in range(1, 9):
+
+        X_test = project_utils.generate_design_matrix(x_test,
                                                       y_test, p)
-    
+
         k_bootstraps = 50
         n_samples = 60
 
@@ -241,7 +346,7 @@ def part_e(step_size = STEP_SIZE):
                                   y_train,
                                   z_train,
                                   n_samples=n_samples)
-    
+
             _X = project_utils.generate_design_matrix(_x, _y, p)
 
             _MSE, _R2, _Z, _beta = project_utils.OLS(_X, _z)
@@ -257,22 +362,22 @@ def part_e(step_size = STEP_SIZE):
             bootstrap_variance[i] = variance
 
         result = {"Polynomial": p,
-                    "Error": np.mean(bootstrap_MSE),
-                    "Bias": np.mean(bootstrap_bias),
-                    "Variance": np.mean(bootstrap_variance)}
-        
+                  "Error": np.mean(bootstrap_MSE),
+                  "Bias": np.mean(bootstrap_bias),
+                  "Variance": np.mean(bootstrap_variance)}
+
         results = results._append(result, ignore_index=True)
 
         # Plot the results
 
     project_utils.plot_bias_variance_tradeoff(results,
-                                    OUTPUT_DIR,
-                                    "franke_bias_variance.png")
+                                              OUTPUT_DIR,
+                                              "franke_bias_variance.png")
 
     print(results)
 
-def part_f(step_size = STEP_SIZE, k = 5):
 
+def part_f(step_size=STEP_SIZE, k=5):
     """
     k-fold cross validation
 
@@ -288,7 +393,7 @@ def part_f(step_size = STEP_SIZE, k = 5):
 
     idx = np.arange(len(x))
 
-    np.random.shuffle(idx) # Shuffle the indices
+    np.random.shuffle(idx)  # Shuffle the indices
 
     for p in range(1, 6):
 
@@ -333,7 +438,7 @@ def part_f(step_size = STEP_SIZE, k = 5):
         print("R2 test: ", np.mean(R2_test_kfold))
         print("MSE train: ", np.mean(MSE_train_kfold))
         print("R2 train: ", np.mean(R2_train_kfold))
-        
+
 # Run the parts
 
 
@@ -346,6 +451,6 @@ if DO_PART_C:
 if DO_PART_D:
     part_d()
 if DO_PART_E:
-    part_e(step_size=0.01)
+    part_e(step_size=0.001)
 if DO_PART_F:
-    part_f(step_size=0.01)
+    part_f(step_size=0.001, k=5)

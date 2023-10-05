@@ -97,6 +97,40 @@ def ridge(X, z, lmb):
 
     return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
 
+def plot_train_test_image(z, idx_test, idx_train, output_dir, filename):
+
+    """
+
+    z here is a 2d array
+
+    """
+
+    z_flat = np.ravel(z)
+
+    img_train = np.zeros((len(z_flat)))
+    img_test = np.zeros((len(z_flat)))
+
+    img_train[idx_train] = z_flat[idx_train]
+    img_test[idx_test] = z_flat[idx_test]
+
+    img_train = np.reshape(img_train, z.shape)
+    img_test = np.reshape(img_test, z.shape)
+
+    fig = plt.figure()
+
+    ax = fig.add_subplot(1,3,1)
+    ax.imshow(z, cmap="viridis")
+
+    ax = fig.add_subplot(1,3,2)
+    ax.imshow(img_train, cmap="viridis")
+
+    ax = fig.add_subplot(1,3,3)
+    ax.imshow(img_test, cmap="viridis")
+
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(output_dir, filename))
+
 def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 
     """
