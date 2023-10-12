@@ -5,8 +5,8 @@ import numpy as np
 
 
 OUTPUT_DIR = "output_terrain"
-CALCULATE_SCORES = True    # Set to false to load pre-calculated scores
-SPLIT_ON_CHUNK = False      # True: split image in train / test CHUNKS, else by random pixels
+CALCULATE_SCORES = False    # Set to false to load pre-calculated scores
+SPLIT_ON_CHUNK = True      # True: split image in train / test CHUNKS, else by random pixels
 
 avals = np.logspace(0, 5, 12)   # regularization strengths
 pvals = list(range(10))                         # max polynomial degrees
@@ -19,15 +19,18 @@ if not os.path.exists(OUTPUT_DIR):
 
 # TODO: average across geographic data - model generalization?
 
+gen = get_terrain_data()
+# next(gen)
+# next(gen)
 
-for terrain, TERRAIN_NAME in get_terrain_data():
+for terrain, TERRAIN_NAME in gen:
     print("\n", TERRAIN_NAME, terrain.shape)
 
     ta = TerrainAnalyser(terrain=terrain, terrain_name=TERRAIN_NAME, avals=avals, pvals=pvals, k_val_split=k_val_split,
                          calculate_scores=CALCULATE_SCORES, split_on_chunk=SPLIT_ON_CHUNK, output_dir=OUTPUT_DIR)
 
     ta.show_terrain_partitions(showplt=False)
-
+    break
 
     # from draft_source import plot_vispy_terrain
     # plot_vispy_terrain(terrain)
