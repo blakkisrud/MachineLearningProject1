@@ -42,7 +42,6 @@ fig2.suptitle("Post-normalization")
 
 for i, ta in enumerate([tr_chunk, tr_pix, fr_chunk, fr_pix]):
     print(ta.terrain_name)
-    ta.show_terrain_partitions()    # uncomment to remove plots of all train / test partitions of the images (four in total)
 
     ax1[i].hist(ta.values_train_orig.ravel())
     ax2[i].hist(ta.values_train)
