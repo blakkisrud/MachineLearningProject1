@@ -16,6 +16,8 @@ There are little time to best practices, suggestions:
 * Lets try to follow pep-8: https://peps.python.org/pep-0008 use an autoformatter if you have, I am bad at it but we should all try
 * Think content in the report before we deal with compiling issues for the report, that we can fix in the end but if we all can stick to *pdflatex* that would be nice (or if others have a strong feeling for something else, this can be changed
 
+Changes
+
 ## Division of labor-plan
 
 * Part a: More or less done: Johan
