@@ -37,6 +37,40 @@ sns.set_style("whitegrid")
 
 # Functions
 
+def ilus_franke(step_size = 0.01, noise = 0.1, plot = True, seed = 42):
+
+    # Make data.
+    x = np.arange(0, 1, step_size)
+    y = np.arange(0, 1, step_size)
+
+    x, y = np.meshgrid(x, y)
+
+    z = FrankeFunction(x, y)
+
+    # Add normally distributed noise
+
+    z_noisy = z + np.random.normal(0, noise, size=z.shape)
+
+    plot_franke(x, y, z_noisy)
+    plot_franke(x, y, z)
+
+    plt.show()
+
+def plot_franke(x, y, z):
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+    surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
+                           linewidth=0, antialiased=False)
+    ax.set_zlim(-0.10, 1.40)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+
+    # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    return fig
+
 
 def generate_design_matrix(x, y, n):
     """
