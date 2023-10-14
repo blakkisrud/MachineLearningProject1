@@ -344,8 +344,8 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
 
     index_groups = np.array_split(idx, k)
 
-    result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train", 
-                                         "R2_test", "Polynomial", "Lambda", "Type"])
+    #result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train", 
+    #                                     "R2_test", "Polynomial", "Lambda", "Type"])
     
     MSE_test_kfold = np.zeros(k)
     MSE_train_kfold = np.zeros(k)
@@ -358,9 +358,9 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
         y_fold = y[g]
         z_fold = z[g]
 
-        x_train = x_train[~g]
-        y_train = y_train[~g]
-        z_train = z_train[~g]
+        x_train = x[~g]
+        y_train = y[~g]
+        z_train = z[~g]
 
         X_train = generate_design_matrix(x_train, y_train, p)
         X_test = generate_design_matrix(x_fold, y_fold, p)
@@ -390,13 +390,19 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
         R2_test_kfold[i] = R2_test
         R2_train_kfold[i] = R2_train
 
-    result_frame["MSE_train"] = np.mean(MSE_train_kfold)
-    result_frame["MSE_test"] = np.mean(MSE_test_kfold)
-    result_frame["R2_train"] = np.mean(R2_train_kfold)
-    result_frame["R2_test"] = np.mean(R2_test_kfold)
-    result_frame["Polynomial"] = p
-    result_frame["Lambda"] = lmb
-    result_frame["Type"] = type
+    result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train",
+                                            "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
+    
+    result = {"MSE_train": np.mean(MSE_train_kfold),
+              "MSE_test": np.mean(MSE_test_kfold),
+              "R2_train": np.mean(R2_train_kfold),
+              "R2_test": np.mean(R2_test_kfold),
+              "Polynomial": p,
+              "Lambda": lmb,
+              "Type": type,
+              "Folds": k}
+    
+    result_frame = result_frame._append(result, ignore_index=True)
 
     return result_frame
 

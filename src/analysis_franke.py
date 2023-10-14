@@ -442,6 +442,89 @@ def part_f(step_size=STEP_SIZE, k=5):
 
     np.random.shuffle(idx)  # Shuffle the indices
 
+    # Perform k-fold cross validation
+    # with multuple approaches for the same set
+    # of folds
+
+    type_vec = ["OLS", "ridge", "lasso"]
+    p_vec = np.arange(1, 9)
+
+    result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train",
+                                            "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
+    
+    for type in type_vec:
+            
+            if type == "OLS":
+                lambda_vals = [0]
+            elif type == "ridge":
+                lambda_vals = np.logspace(-3, 3, 20)
+            elif type == "lasso":
+                lambda_vals = np.logspace(-3, 3, 20)
+    
+            for p in p_vec:
+    
+                for lambda_ in lambda_vals:
+    
+                    foo = project_utils.k_fold_cross_validation(idx=idx,
+                                                                x=x,
+                                                                y=y,
+                                                                z=franke_z,
+                                                                k=k,
+                                                                type=type,
+                                                                lmb=lambda_,
+                                                                p=p)
+    
+                    result_frame = result_frame._append(foo, ignore_index=True)
+
+    print(result_frame)
+
+    # Plot the results
+
+    # First the OLS
+
+    result_frame_ols = result_frame[result_frame["Type"] == "OLS"]
+
+    project_utils.plot_mse_and_r2(result_frame_ols,
+                                    OUTPUT_DIR,
+                                    "franke_OLS_mse_r2_kfold.png",
+                                    "OLS")
+    
+    # Then the ridge
+
+    result_frame_ridge = result_frame[result_frame["Type"] == "ridge"]
+
+    project_utils.plot_mse_and_r2(result_frame_ridge,
+                                    OUTPUT_DIR,
+                                    "franke_ridge_mse_r2_kfold.png",
+                                    "Ridge")
+    
+    # Then the lasso
+
+    result_frame_lasso = result_frame[result_frame["Type"] == "lasso"]
+
+    project_utils.plot_mse_and_r2(result_frame_lasso,
+                                    OUTPUT_DIR,
+                                    "franke_lasso_mse_r2_kfold.png",
+                                    "Lasso")
+
+
+    sys.exit()
+
+    type = "ridge"
+    lambda_ = 0.1
+    p = 3
+
+    foo = project_utils.k_fold_cross_validation(idx=idx,
+                                                x=x,
+                                                y=y,
+                                                z=franke_z,
+                                                k=k,
+                                                type=type,
+                                                lmb=lambda_,
+                                                p=p)
+
+    print(foo)
+
     sys.exit()
 
     for p in range(1, 6):
