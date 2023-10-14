@@ -43,13 +43,12 @@ DO_PART_A = False
 DO_PART_B = False
 DO_PART_C = False
 DO_PART_D = False
-DO_PART_E = True
-DO_PART_F = False
+DO_PART_E = False
+DO_PART_F = True
 
 # Helper functions
 
 # Functions for doing the analysis, one function per subtask
-
 
 def part_a(plot_prediction=False):
 
@@ -305,7 +304,7 @@ def part_c():
         z_train = franke_z_flat[idx_train]
         z_test = franke_z_flat[idx_test]
 
-        for lmb in np.logspace(-6, 3, 12):
+        for lmb in np.logspace(-3, 3, 20):
             print(lmb)
 
             clf = linear_model.Lasso(alpha=lmb,
@@ -378,7 +377,7 @@ def part_e(step_size=STEP_SIZE):
         y_train = y[idx_train]
         z_train = franke_z_flat[idx_train]
 
-        k_bootstraps = 30
+        k_bootstraps = 100
         n_samples = 20000
 
         print("The relativel size of the bootstrap samples: ",
@@ -442,6 +441,8 @@ def part_f(step_size=STEP_SIZE, k=5):
     idx = np.arange(len(x))
 
     np.random.shuffle(idx)  # Shuffle the indices
+
+    sys.exit()
 
     for p in range(1, 6):
 

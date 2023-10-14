@@ -32,6 +32,7 @@ from sklearn.utils import resample
 
 import os
 import seaborn as sns
+import pandas as pd
 
 sns.set_style("whitegrid")
 
@@ -319,13 +320,94 @@ def FrankeFunction(x, y, add_noise=False, sigma=0.1):
         return term1 + term2 + term3 + term4 + noise
     else:
         return term1 + term2 + term3 + term4
+    
+def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
+
+    """
+    K-fold cross validation, idx is a list of indices.
+    in random order, k is the number of folds.
+    Including also the polynomial degree p for bookeeping purposes.
+
+    Type is a string that decides if either OLS, Ridge or LASSO
+    is used
+
+    Should return a pandas frame with the MSE, p2 of train
+    and test of each fold.
+
+    """
+
+    if type == "ridge" and lmb == None:
+        raise ValueError("Lambda must be specified for ridge regression.")
+    
+    if type == "lasso" and lmb == None:
+        raise ValueError("Lambda must be specified for LASSO regression.")
+
+    index_groups = np.array_split(idx, k)
+
+    result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train", 
+                                         "R2_test", "Polynomial", "Lambda", "Type"])
+    
+    MSE_test_kfold = np.zeros(k)
+    MSE_train_kfold = np.zeros(k)
+    R2_test_kfold = np.zeros(k)
+    R2_train_kfold = np.zeros(k)
+
+    for g, i in zip(index_groups, range(k)):
+
+        x_fold = x[g]
+        y_fold = y[g]
+        z_fold = z[g]
+
+        x_train = x_train[~g]
+        y_train = y_train[~g]
+        z_train = z_train[~g]
+
+        X_train = generate_design_matrix(x_train, y_train, p)
+        X_test = generate_design_matrix(x_fold, y_fold, p)
+
+        if type == "OLS":
+            MSE_train, R2_train, z_tilde_train, beta_train = OLS(X_train, z_train)
+            z_tilde_test = X_test.dot(beta_train)
+
+        elif type == "ridge":
+            MSE_train, R2_train, z_tilde_train, beta_train = ridge(X_train, z_train, lmb)
+            z_tilde_test = X_test.dot(beta_train)
+
+        elif type == "lasso":
+            clf = linear_model.Lasso(alpha=lmb, fit_intercept=False)
+            clf.fit(X_train, z_train)
+            z_tilde_train = clf.predict(X_train)
+            z_tilde_test = clf.predict(X_test)
+
+            MSE_train = MSE(z_train, z_tilde_train)
+            R2_train = R2(z_train, z_tilde_train)
+
+        MSE_test = MSE(z_fold, z_tilde_test)
+        R2_test = R2(z_fold, z_tilde_test)
+
+        MSE_test_kfold[i] = MSE_test
+        MSE_train_kfold[i] = MSE_train
+        R2_test_kfold[i] = R2_test
+        R2_train_kfold[i] = R2_train
+
+    result_frame["MSE_train"] = np.mean(MSE_train_kfold)
+    result_frame["MSE_test"] = np.mean(MSE_test_kfold)
+    result_frame["R2_train"] = np.mean(R2_train_kfold)
+    result_frame["R2_test"] = np.mean(R2_test_kfold)
+    result_frame["Polynomial"] = p
+    result_frame["Lambda"] = lmb
+    result_frame["Type"] = type
+
+    return result_frame
+
+
 
 
 def get_terrain_data():
     # add all terrain data, with names, here
     from imageio.v3 import imread
 
-    for terrain, TERRAIN_NAME in zip([imread("SRTM_data_Norway_1.tif"), imread("SRTM_data_Norway_2.tif"), imread("oslo.tif"), imread("eide.tif")],
+    for terrain, TERRAIN_NAME in zip([imread("src/SRTM_data_Norway_1.tif"), imread("src/SRTM_data_Norway_2.tif"), imread("src/oslo.tif"), imread("src/eide.tif")],
                                     ["terrain1", "terrain2", "oslo", "eide"]):
         yield terrain, TERRAIN_NAME
 
