@@ -331,7 +331,7 @@ def get_terrain_data():
 
 
 class TerrainAnalyser():
-    def __init__(self, terrain, terrain_name,
+    def __init__(self, terrain, terrain_name="noname",
                  output_dir="", calculate_scores=True, split_on_chunk=False,
                  k_val_split=3, avals=np.logspace(0, 3, 4), pvals=list(range(2)),
                  verbose=True):
@@ -348,6 +348,10 @@ class TerrainAnalyser():
         self.random_state = 42
 
         self.make_train_test()
+
+        # Save original train / test values for plotting histogram BEFORE and AFTER normalization
+        self.values_train_orig = self.values_train
+        self.values_test_orig = self.values_test
         self.normalize()
 
         self.output_dir = output_dir
@@ -390,13 +394,15 @@ class TerrainAnalyser():
         return 1
 
 
-    def normalize(self):
+    def normalize(self, plot_histogram=False):
         # Standard-score scaling image gray-levels
         # Min-max scaling coordinates to -1, 1
         # Fit to train data, only transform test
+
         self.scaler_img = preprocessing.StandardScaler()
         self.scaler_x = preprocessing.MinMaxScaler(feature_range=(-1, 1))
         self.scaler_y = preprocessing.MinMaxScaler(feature_range=(-1, 1))
+
 
         self.values_train = self.scaler_img.fit_transform(self.values_train.reshape(-1, 1))
         self.values_test = self.scaler_img.transform(self.values_test.reshape(-1, 1))
