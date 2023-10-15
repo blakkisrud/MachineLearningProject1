@@ -24,6 +24,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
 from random import random, seed
 import sys
+import pandas as pd
 
 from sklearn.model_selection import train_test_split, KFold
 from sklearn import linear_model
@@ -292,13 +293,13 @@ def get_terrain_data():
     from imageio.v3 import imread
 
     for terrain, TERRAIN_NAME in zip([imread("SRTM_data_Norway_1.tif"), imread("SRTM_data_Norway_2.tif"), imread("oslo.tif"), imread("eide.tif")],
-                                    ["terrain1", "terrain2", "oslo", "eide"]):
+                                    ["terrain1", "terrain2", "Oslo", "Eide"]):
         yield terrain, TERRAIN_NAME
 
 
 class TerrainAnalyser():
     def __init__(self, terrain, terrain_name="noname",
-                 output_dir="", calculate_scores=True, split_on_chunk=False,
+                 output_dir="output_terrain", calculate_scores=True, split_on_chunk=False,
                  k_val_split=3, avals=np.logspace(0, 3, 4), pvals=list(range(2)),
                  verbose=True):
 
@@ -360,6 +361,50 @@ class TerrainAnalyser():
         return 1
 
 
+    def ols(self, pmax=5):
+        # from statsmodels.regression.linear_model import OLS
+        # OLS(endog=self.values_train, exog=self.x_train, hasconst=True)
+        df_scores_ols = pd.DataFrame(dtype=float)
+
+
+        for p in list(range(1, pmax)):
+            m = linear_model.LinearRegression(fit_intercept=False)
+
+            X_train = generate_design_matrix(self.x_train, self.y_train, n=p)
+            X_test = generate_design_matrix(self.x_test, self.y_test, n=p)
+            m.fit(X_train, self.values_train)
+
+            # print(X_train.shape)
+            zhat_train = m.predict(X_train)
+            r2_train = r2_score(zhat_train, self.values_train)
+            mse_train = mean_squared_error(zhat_train, self.values_train)
+
+            zhat_test = m.predict(X_test)
+            r2_test = r2_score(zhat_test, self.values_test)
+            mse_test = mean_squared_error(zhat_test, self.values_test)
+
+            # print(p, r2_train, _train)
+            print(p, end=" ")
+
+            df_scores_ols.loc[p, ["mse train", "mse test", "r2 train", "r2 test"]] = [mse_train, mse_test, r2_train, r2_test]
+
+            # yield p, r2_train, r2_test, mse_train, mse_test
+
+        df_scores_ols.to_csv(os.path.join(self.output_dir, f"ols_{self.terrain_name}.csv"))
+        print("OLS results saved in ", os.path.join(self.output_dir, f"ols_{self.terrain_name}.csv"))
+
+        pass
+
+
+    def load_ols(self):
+        path = os.path.join(self.output_dir, f"ols_{self.terrain_name.lower()}.csv")
+        scores = pd.read_csv(path, index_col=0)
+        print(scores)
+        # sys.exit()
+        # break
+        return scores
+
+
     def normalize(self, plot_histogram=False):
         # Standard-score scaling image gray-levels
         # Min-max scaling coordinates to -1, 1
@@ -401,7 +446,7 @@ class TerrainAnalyser():
             img_val[idx_val_k] = values_val_k.reshape(-1)
             img_val = img_val.reshape(terrain_shape)
 
-            ax[ki].imshow(img_val)
+            ax[ki].imshow(img_val, cmap="gray")
             ax[ki].set_title(f"Fold {ki + 1}")
             ax[ki].axis("off")
 
@@ -416,11 +461,11 @@ class TerrainAnalyser():
         img_test = img_test.reshape(terrain_shape)
 
         fig, ax = plt.subplots(ncols=3)
-        ax[0].imshow(img_train)
+        ax[0].imshow(img_train, cmap="gray")
         ax[0].set_title("Train")
-        ax[1].imshow(img_test)
+        ax[1].imshow(img_test, cmap="gray")
         ax[1].set_title("Test")
-        ax[2].imshow(img_train + img_test)
+        ax[2].imshow(img_train + img_test, cmap="gray")
         ax[2].set_title("Train + test")
         [axi.axis("off") for axi in ax]
 
@@ -511,6 +556,7 @@ class TerrainAnalyser():
         return 1
 
 
+
     def load_k_fold_cross_validated(self):
         # mse_train_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_train.npy"), allow_pickle=True)
         # mse_val_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_val.npy"), allow_pickle=True)
@@ -539,8 +585,13 @@ class TerrainAnalyser():
 
             # TODO: fix colobars
             divider = make_axes_locatable(ax[i])
+            # divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='5%', pad=0.05)
+
             # cax = divider.append_axes('right', size='5%', pad=0.05)
             # fig.colorbar(im, ax[i])
+            fig.colorbar(im, cax=cax, orientation='vertical')
+
 
             ax[i].set_title(name)
             ax[i].set_xlabel("p")

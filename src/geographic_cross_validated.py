@@ -29,8 +29,8 @@ for terrain, TERRAIN_NAME in gen:
     ta = TerrainAnalyser(terrain=terrain, terrain_name=TERRAIN_NAME, avals=avals, pvals=pvals, k_val_split=k_val_split,
                          calculate_scores=CALCULATE_SCORES, split_on_chunk=SPLIT_ON_CHUNK, output_dir=OUTPUT_DIR)
 
-    ta.show_terrain_partitions(showplt=False)
-    break
+    ta.show_terrain_partitions(showplt=True)
+    # break
 
     # from draft_source import plot_vispy_terrain
     # plot_vispy_terrain(terrain)
@@ -39,9 +39,8 @@ for terrain, TERRAIN_NAME in gen:
     if CALCULATE_SCORES:
         ta.calculate_k_fold_cross_validated()
 
-
     ta.load_k_fold_cross_validated()
-    ta.show_k_fold_cross_validated_scores(showplt=False)
+    ta.show_k_fold_cross_validated_scores(showplt=True)
 
 
     ta.find_optimal_hps()
