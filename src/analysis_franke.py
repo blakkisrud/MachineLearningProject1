@@ -42,13 +42,14 @@ PERFORM_SCALING = False
 # Running flags
 
 DO_PART_A = True
-DO_PART_B = True 
-DO_PART_C = True 
-DO_PART_D = True 
-DO_PART_E = True 
-DO_PART_F = True 
+DO_PART_B = True
+DO_PART_C = True
+DO_PART_D = True
+DO_PART_E = True
+DO_PART_F = True
 
 # Helper functions
+
 
 def part_a(plot_prediction=False):
 
@@ -69,48 +70,49 @@ def part_a(plot_prediction=False):
 
     idx_train, idx_test = train_test_split(
         index_vals, test_size=0.3, random_state=42)
-    
+
     if PERFORM_SCALING:
 
         scaler_vals = preprocessing.StandardScaler()
 
         franke_z_flat_orig = franke_z_flat.copy()
 
-        franke_z_flat[idx_train] = scaler_vals.fit_transform(franke_z_flat[idx_train].reshape(-1, 1)).ravel()
-        franke_z_flat[idx_test] = scaler_vals.transform(franke_z_flat[idx_test].reshape(-1, 1)).ravel()
+        franke_z_flat[idx_train] = scaler_vals.fit_transform(
+            franke_z_flat[idx_train].reshape(-1, 1)).ravel()
+        franke_z_flat[idx_test] = scaler_vals.transform(
+            franke_z_flat[idx_test].reshape(-1, 1)).ravel()
 
     # Save the train and test data sets as images
 
     project_utils.plot_train_test_image(
         franke_z, idx_test, idx_train, OUTPUT_DIR, "franke_training_test.png")
-    
+
     plt.close()
 
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_test", "MSE_train", "R2_test", "R2_train"])
-        
+
     if plot_prediction:
 
         p_to_plot = [1, 3, 6]
 
-        fig, axes = plt.subplots(nrows=len(p_to_plot)+1, ncols=2, figsize=(5, 10))
+        fig, axes = plt.subplots(
+            nrows=len(p_to_plot)+1, ncols=2, figsize=(5, 10))
 
         print(axes)
-        
+
         franke_no_noise = project_utils.FrankeFunction(x, y, add_noise=False)
         franke_no_noise_img = franke_no_noise.reshape(franke_z.shape)
 
-        axes[0,0].imshow(franke_no_noise_img, cmap="viridis")
-        axes[0,0].set_title("Franke function")
+        axes[0, 0].imshow(franke_no_noise_img, cmap="viridis")
+        axes[0, 0].set_title("Franke function")
 
-
-        axes[0,1].imshow(franke_z, cmap="viridis")
-        axes[0,1].set_title("Frank function with gaussian noise")
+        axes[0, 1].imshow(franke_z, cmap="viridis")
+        axes[0, 1].set_title("Frank function with gaussian noise")
 
         plot_row = 1
 
     for p in range(1, 12):
-
 
         X_train = project_utils.generate_design_matrix(
             x[idx_train], y[idx_train], p)
@@ -149,18 +151,17 @@ def part_a(plot_prediction=False):
             img_predicton = img_predicton.reshape(franke_z.shape)
 
             # Plot the prediction
-            
-            axes[plot_row,0].imshow(Z_pred_whole_image, cmap="viridis")
-            axes[plot_row,0].set_title("Prediction for p = " + str(p))
 
-            axes[plot_row,1].imshow(
+            axes[plot_row, 0].imshow(Z_pred_whole_image, cmap="viridis")
+            axes[plot_row, 0].set_title("Prediction for p = " + str(p))
+
+            axes[plot_row, 1].imshow(
                 (franke_z - Z_pred_whole_image.reshape(franke_z.shape)), cmap="viridis")
-            axes[plot_row,1].set_title("Difference for p = " + str(p))
+            axes[plot_row, 1].set_title("Difference for p = " + str(p))
 
             plot_row += 1
 
             print(plot_row)
-
 
     if plot_prediction:
         for ax in axes.ravel():
@@ -168,7 +169,7 @@ def part_a(plot_prediction=False):
 
         plt.tight_layout()
         plt.savefig(os.path.join(
-            OUTPUT_DIR, "franke_prediction_all" + ".png"), dpi = DPI_FIG)
+            OUTPUT_DIR, "franke_prediction_all" + ".png"), dpi=DPI_FIG)
 
     print(results)
 
@@ -176,6 +177,7 @@ def part_a(plot_prediction=False):
                                   OUTPUT_DIR,
                                   "franke_OLS_mse_r2.png",
                                   "OLS")
+
 
 def part_b():
 
@@ -237,9 +239,10 @@ def part_b():
     for p in np.unique(results["Polynomial"]):
         print("Polynomial degree: ", p)
         p_frame = results[results["Polynomial"] == p]
-        row_with_min_mse = p_frame[p_frame["MSE_test"] == p_frame["MSE_test"].min()]
+        row_with_min_mse = p_frame[p_frame["MSE_test"]
+                                   == p_frame["MSE_test"].min()]
         print(row_with_min_mse)
-    
+
     # Plot the results
 
     project_utils.plot_mse_and_r2(results,
@@ -425,31 +428,31 @@ def part_f(step_size=STEP_SIZE, k=5):
     p_vec = np.arange(1, 9)
 
     result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train",
-                                            "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
-    
+                                         "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
+
     for type in type_vec:
-            
-            if type == "OLS":
-                lambda_vals = [0]
-            elif type == "ridge":
-                lambda_vals = np.logspace(-6, 0, 20)
-            elif type == "lasso":
-                lambda_vals = np.logspace(-6, 0, 20)
-    
-            for p in p_vec:
-    
-                for lambda_ in lambda_vals:
-    
-                    foo = project_utils.k_fold_cross_validation(idx=idx,
-                                                                x=x,
-                                                                y=y,
-                                                                z=franke_z,
-                                                                k=k,
-                                                                type=type,
-                                                                lmb=lambda_,
-                                                                p=p)
-    
-                    result_frame = result_frame._append(foo, ignore_index=True)
+
+        if type == "OLS":
+            lambda_vals = [0]
+        elif type == "ridge":
+            lambda_vals = np.logspace(-6, 0, 20)
+        elif type == "lasso":
+            lambda_vals = np.logspace(-6, 0, 20)
+
+        for p in p_vec:
+
+            for lambda_ in lambda_vals:
+
+                foo = project_utils.k_fold_cross_validation(idx=idx,
+                                                            x=x,
+                                                            y=y,
+                                                            z=franke_z,
+                                                            k=k,
+                                                            type=type,
+                                                            lmb=lambda_,
+                                                            p=p)
+
+                result_frame = result_frame._append(foo, ignore_index=True)
 
     print(result_frame)
 
@@ -460,27 +463,27 @@ def part_f(step_size=STEP_SIZE, k=5):
     result_frame_ols = result_frame[result_frame["Type"] == "OLS"]
 
     project_utils.plot_mse_and_r2(result_frame_ols,
-                                    OUTPUT_DIR,
-                                    "franke_OLS_mse_r2_" + str(k) + "fold.png",
-                                    "OLS")
-    
+                                  OUTPUT_DIR,
+                                  "franke_OLS_mse_r2_" + str(k) + "fold.png",
+                                  "OLS")
+
     # Then the ridge
 
     result_frame_ridge = result_frame[result_frame["Type"] == "ridge"]
 
     project_utils.plot_mse_and_r2(result_frame_ridge,
-                                    OUTPUT_DIR,
-                                    "franke_ridge_mse_r2_" + str(k) + "fold.png",
-                                    "Ridge")
-    
+                                  OUTPUT_DIR,
+                                  "franke_ridge_mse_r2_" + str(k) + "fold.png",
+                                  "Ridge")
+
     # Then the lasso
 
     result_frame_lasso = result_frame[result_frame["Type"] == "lasso"]
 
     project_utils.plot_mse_and_r2(result_frame_lasso,
-                                    OUTPUT_DIR,
-                                    "franke_lasso_mse_r2_" + str(k) + "fold.png",
-                                    "Lasso")
+                                  OUTPUT_DIR,
+                                  "franke_lasso_mse_r2_" + str(k) + "fold.png",
+                                  "Lasso")
 
 
 # Run the parts

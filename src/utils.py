@@ -280,7 +280,7 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
                         alpha=ALPHA,
                         palette="colorblind",
                         ax=ax,
-                        legend = False,
+                        legend=False,
                         hue="Polynomial")
 
         ax.set_xlabel("Lambda")
@@ -297,7 +297,7 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
                         data=result_frame,
                         alpha=ALPHA,
                         ax=ax,
-                        legend = False,
+                        legend=False,
                         palette="colorblind",
                         hue="Polynomial")
 
@@ -315,7 +315,7 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
                         data=result_frame,
                         palette="colorblind",
                         alpha=ALPHA,
-                        legend = False,
+                        legend=False,
                         ax=ax,
                         hue="Polynomial")
 
@@ -343,9 +343,9 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
 
         ax.text(-0.25, 0.95, "D", transform=ax.transAxes,
                 fontsize=16, fontweight="bold", va="top")
-        
-        axes[1, 1].legend(title="Poly", bbox_to_anchor=(1.05, 1), loc='upper left')
 
+        axes[1, 1].legend(title="Poly", bbox_to_anchor=(
+            1.05, 1), loc='upper left')
 
         plt.tight_layout()
 
