@@ -36,19 +36,19 @@ sns.set_context("paper")
 SIGMA = 0.1  # Noise level
 OUTPUT_DIR = "output_tmp"  # Output directory for figures
 STEP_SIZE = 0.01  # Step size for sampling the Franke function
+DPI_FIG = project_utils.DPI_FIG  # DPI for saving figures
+PERFORM_SCALING = False
 
 # Running flags
 
 DO_PART_A = True
-DO_PART_B = False
-DO_PART_C = False
-DO_PART_D = False
-DO_PART_E = False
-DO_PART_F = False
+DO_PART_B = True 
+DO_PART_C = True 
+DO_PART_D = True 
+DO_PART_E = True 
+DO_PART_F = True 
 
 # Helper functions
-
-# Functions for doing the analysis, one function per subtask
 
 def part_a(plot_prediction=False):
 
@@ -69,6 +69,15 @@ def part_a(plot_prediction=False):
 
     idx_train, idx_test = train_test_split(
         index_vals, test_size=0.3, random_state=42)
+    
+    if PERFORM_SCALING:
+
+        scaler_vals = preprocessing.StandardScaler()
+
+        franke_z_flat_orig = franke_z_flat.copy()
+
+        franke_z_flat[idx_train] = scaler_vals.fit_transform(franke_z_flat[idx_train].reshape(-1, 1)).ravel()
+        franke_z_flat[idx_test] = scaler_vals.transform(franke_z_flat[idx_test].reshape(-1, 1)).ravel()
 
     # Save the train and test data sets as images
 
@@ -140,17 +149,9 @@ def part_a(plot_prediction=False):
             img_predicton = img_predicton.reshape(franke_z.shape)
 
             # Plot the prediction
-
-            #fig, axes = plt.subplots(1, 3, figsize=(10, 5))
-
-            #axes[0].imshow(franke_z, cmap="viridis")
-            #axes[0].set_title("Franke function")
             
             axes[plot_row,0].imshow(Z_pred_whole_image, cmap="viridis")
             axes[plot_row,0].set_title("Prediction for p = " + str(p))
-
-            #axes[p].imshow(Z_pred_whole_image, cmap="viridis")
-            #axes[p].set_title("Prediction")
 
             axes[plot_row,1].imshow(
                 (franke_z - Z_pred_whole_image.reshape(franke_z.shape)), cmap="viridis")
@@ -167,7 +168,7 @@ def part_a(plot_prediction=False):
 
         plt.tight_layout()
         plt.savefig(os.path.join(
-            OUTPUT_DIR, "franke_prediction_all" + ".png"))
+            OUTPUT_DIR, "franke_prediction_all" + ".png"), dpi = DPI_FIG)
 
     print(results)
 
@@ -230,8 +231,15 @@ def part_b():
 
             results = results._append(result, ignore_index=True)
 
-    print(results)
+    print("Results: ")
+    print("The lowest MSE for the test data set is: ")
 
+    for p in np.unique(results["Polynomial"]):
+        print("Polynomial degree: ", p)
+        p_frame = results[results["Polynomial"] == p]
+        row_with_min_mse = p_frame[p_frame["MSE_test"] == p_frame["MSE_test"].min()]
+        print(row_with_min_mse)
+    
     # Plot the results
 
     project_utils.plot_mse_and_r2(results,
@@ -271,12 +279,12 @@ def part_c():
         z_train = franke_z_flat[idx_train]
         z_test = franke_z_flat[idx_test]
 
-        for lmb in np.logspace(-6, 2, 20):
+        for lmb in np.logspace(-6, 0, 20):
             print(lmb)
 
             clf = linear_model.Lasso(alpha=lmb,
                                      fit_intercept=False,
-                                     max_iter=10000)
+                                     max_iter=1000)
 
             clf.fit(X_train, z_train)
 
@@ -424,9 +432,9 @@ def part_f(step_size=STEP_SIZE, k=5):
             if type == "OLS":
                 lambda_vals = [0]
             elif type == "ridge":
-                lambda_vals = np.logspace(-6, 2, 20)
+                lambda_vals = np.logspace(-6, 0, 20)
             elif type == "lasso":
-                lambda_vals = np.logspace(-6, 2, 20)
+                lambda_vals = np.logspace(-6, 0, 20)
     
             for p in p_vec:
     
@@ -453,7 +461,7 @@ def part_f(step_size=STEP_SIZE, k=5):
 
     project_utils.plot_mse_and_r2(result_frame_ols,
                                     OUTPUT_DIR,
-                                    "franke_OLS_mse_r2_kfold.png",
+                                    "franke_OLS_mse_r2_" + str(k) + "fold.png",
                                     "OLS")
     
     # Then the ridge
@@ -462,7 +470,7 @@ def part_f(step_size=STEP_SIZE, k=5):
 
     project_utils.plot_mse_and_r2(result_frame_ridge,
                                     OUTPUT_DIR,
-                                    "franke_ridge_mse_r2_kfold.png",
+                                    "franke_ridge_mse_r2_" + str(k) + "fold.png",
                                     "Ridge")
     
     # Then the lasso
@@ -471,7 +479,7 @@ def part_f(step_size=STEP_SIZE, k=5):
 
     project_utils.plot_mse_and_r2(result_frame_lasso,
                                     OUTPUT_DIR,
-                                    "franke_lasso_mse_r2_kfold.png",
+                                    "franke_lasso_mse_r2_" + str(k) + "fold.png",
                                     "Lasso")
 
 
@@ -487,6 +495,10 @@ if DO_PART_C:
 if DO_PART_D:
     part_d()
 if DO_PART_E:
-    part_e(step_size=0.01)
+    part_e(step_size=STEP_SIZE)
 if DO_PART_F:
-    part_f(step_size=0.01, k=5)
+    part_f(step_size=STEP_SIZE, k=5)
+
+# Plotting of theory fugures
+
+project_utils.plot_franke_2d(OUTPUT_DIR, "franke_2d.png")

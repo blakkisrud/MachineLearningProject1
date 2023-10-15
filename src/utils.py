@@ -42,10 +42,12 @@ sns.set_palette(custom_palette)
 sns.set_style("whitegrid")
 
 ALPHA = 0.80
+DPI_FIG = 600
 
 # Functions
 
-def ilus_franke(step_size = 0.01, noise = 0.1, plot = True, seed = 42):
+
+def ilus_franke(step_size=0.01, noise=0.1, plot=True, seed=42):
 
     # Make data.
     x = np.arange(0, 1, step_size)
@@ -64,6 +66,7 @@ def ilus_franke(step_size = 0.01, noise = 0.1, plot = True, seed = 42):
 
     plt.show()
 
+
 def plot_franke(x, y, z):
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -78,6 +81,32 @@ def plot_franke(x, y, z):
     fig.colorbar(surf, shrink=0.5, aspect=5)
 
     return fig
+
+
+def plot_franke_2d(output_dir, filename="franke_theory.png"):
+
+    x = np .arange(0, 1, 0.01)
+    y = np .arange(0, 1, 0.01)
+
+    x, y = np.meshgrid(x, y)
+
+    z = FrankeFunction(x, y, add_noise=False)
+    z_noisy = FrankeFunction(x, y, add_noise=True)
+
+    fig, axes = plt.subplots(1, 2)
+
+    ax = axes[0]
+    im = ax.imshow(z, cmap="viridis")
+    ax.set_title("Franke function", fontsize=18)
+    ax.grid(False)
+
+    ax1 = axes[1]
+    im1 = ax1.imshow(z_noisy, cmap="viridis")
+    ax1.set_title("Franke function with noise", fontsize=18)
+    ax1.grid(False)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, filename), dpi=DPI_FIG)
 
 
 def generate_design_matrix(x, y, n):
@@ -114,7 +143,6 @@ def R2(y, y_tilde):
 
 
 def OLS(X, z):
-
     """
     X: Design matrix
     z: Data
@@ -127,8 +155,8 @@ def OLS(X, z):
     z_tilde = X.dot(beta)
     return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
 
-def ridge(X, z, lmb):
 
+def ridge(X, z, lmb):
     """
     X: Design matrix
     z: Data
@@ -143,8 +171,8 @@ def ridge(X, z, lmb):
 
     return MSE(z, z_tilde), R2(z, z_tilde), z_tilde, beta
 
-def plot_train_test_image(z, idx_test, idx_train, output_dir, filename):
 
+def plot_train_test_image(z, idx_test, idx_train, output_dir, filename):
     """
 
     z here is a 2d array
@@ -164,21 +192,27 @@ def plot_train_test_image(z, idx_test, idx_train, output_dir, filename):
 
     fig = plt.figure()
 
-    ax = fig.add_subplot(1,3,1)
+    ax = fig.add_subplot(1, 3, 1)
     ax.imshow(z, cmap="viridis")
+    ax.set_title("Original")
+    ax.grid(False)
 
-    ax = fig.add_subplot(1,3,2)
+    ax = fig.add_subplot(1, 3, 2)
     ax.imshow(img_train, cmap="viridis")
+    ax.set_title("Train")
+    ax.grid(False)
 
-    ax = fig.add_subplot(1,3,3)
+    ax = fig.add_subplot(1, 3, 3)
     ax.imshow(img_test, cmap="viridis")
+    ax.set_title("Test")
+    ax.grid(False)
 
     plt.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, filename))
+    plt.savefig(os.path.join(output_dir, filename), dpi=DPI_FIG)
+
 
 def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
-
     """
     For plotting the MSE and R2 as a function of the polynomial degree.
 
@@ -191,26 +225,29 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
     """
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,2,1)
+    ax = fig.add_subplot(1, 2, 1)
 
-    ax.text(-0.25, 0.98, "A", transform=ax.transAxes, 
+    ax.text(-0.25, 0.98, "A", transform=ax.transAxes,
             fontsize=16, fontweight="bold", va="top")
 
-
-    ax.plot(result_frame["Polynomial"], result_frame["MSE_train"], 'o', label="MSE train")
-    ax.plot(result_frame["Polynomial"], result_frame["MSE_test"], 'o', label="MSE test")
+    ax.plot(result_frame["Polynomial"],
+            result_frame["MSE_train"], 'o', label="MSE train")
+    ax.plot(result_frame["Polynomial"],
+            result_frame["MSE_test"], 'o', label="MSE test")
 
     ax.set_xlabel("Polynomial degree")
     ax.set_ylabel("MSE")
 
     ax.legend()
 
-    ax = fig.add_subplot(1,2,2)
+    ax = fig.add_subplot(1, 2, 2)
 
-    ax.plot(result_frame["Polynomial"], result_frame["R2_train"],'o',  label="R2 train")
-    ax.plot(result_frame["Polynomial"], result_frame["R2_test"],'o',  label="R2 test")
-    
-    ax.text(-0.25, 0.98, "B", transform=ax.transAxes, 
+    ax.plot(result_frame["Polynomial"],
+            result_frame["R2_train"], 'o',  label="R2 train")
+    ax.plot(result_frame["Polynomial"],
+            result_frame["R2_test"], 'o',  label="R2 test")
+
+    ax.text(-0.25, 0.98, "B", transform=ax.transAxes,
             fontsize=16, fontweight="bold", va="top")
 
     ax.set_xlabel("Polynomial degree")
@@ -220,10 +257,10 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 
     plt.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, filename))
+    plt.savefig(os.path.join(output_dir, filename), dpi=DPI_FIG)
+
 
 def plot_mse_and_r2(result_frame, output_dir, filename, type):
-
     """
     Plot of the ridge, LASSO or OLS regression analysis.
     """
@@ -233,107 +270,112 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
 
     elif type == "Ridge" or "LASSO":
 
-        fig = plt.figure()
-        ax = fig.add_subplot(2,2,1)
+        fig, axes = plt.subplots(ncols=2, nrows=2)
 
-        sns.scatterplot(x = "Lambda",
-                        y = "MSE_train",
-                        data = result_frame,
-                        alpha = ALPHA,
+        ax = axes[0, 0]
+
+        sns.scatterplot(x="Lambda",
+                        y="MSE_train",
+                        data=result_frame,
+                        alpha=ALPHA,
                         palette="colorblind",
-                        hue = "Polynomial")
-    
-        ax.set_xlabel("Lambda")
-        ax.set_ylabel("MSE")
-        ax.set_xscale("log")
-        
-        ax.text(-0.25, 0.95, "A", transform=ax.transAxes, 
-                fontsize=16, fontweight="bold", va="top")
-    
-        ax = fig.add_subplot(2,2,2)
-    
-        sns.scatterplot(x = "Lambda",
-                        y = "MSE_test",
-                        data = result_frame,
-                        alpha = ALPHA,
-                        palette="colorblind",
-                        hue = "Polynomial")
+                        ax=ax,
+                        legend = False,
+                        hue="Polynomial")
 
         ax.set_xlabel("Lambda")
         ax.set_ylabel("MSE")
         ax.set_xscale("log")
-        
-        ax.text(-0.25, 0.95, "B", transform=ax.transAxes, 
+
+        ax.text(-0.25, 0.95, "A", transform=ax.transAxes,
                 fontsize=16, fontweight="bold", va="top")
 
+        ax = axes[0, 1]
 
-
-        ax.legend()
-
-        ax = fig.add_subplot(2,2,3)
-
-        sns.scatterplot(x = "Lambda",
-                        y = "R2_train",
-                        data = result_frame,
+        sns.scatterplot(x="Lambda",
+                        y="MSE_test",
+                        data=result_frame,
+                        alpha=ALPHA,
+                        ax=ax,
+                        legend = False,
                         palette="colorblind",
-                        alpha = ALPHA,
-                        hue = "Polynomial")
-    
+                        hue="Polynomial")
+
+        ax.set_xlabel("Lambda")
+        ax.set_ylabel("MSE")
+        ax.set_xscale("log")
+
+        ax.text(-0.25, 0.95, "B", transform=ax.transAxes,
+                fontsize=16, fontweight="bold", va="top")
+
+        ax = axes[1, 0]
+
+        sns.scatterplot(x="Lambda",
+                        y="R2_train",
+                        data=result_frame,
+                        palette="colorblind",
+                        alpha=ALPHA,
+                        legend = False,
+                        ax=ax,
+                        hue="Polynomial")
+
         ax.set_xlabel("Lambda")
         ax.set_ylabel("R2")
         ax.set_xscale("log")
-        
-        ax.text(-0.25, 0.95, "C", transform=ax.transAxes, 
+
+        ax.text(-0.25, 0.95, "C", transform=ax.transAxes,
                 fontsize=16, fontweight="bold", va="top")
 
-        ax = fig.add_subplot(2,2,4)
+        ax = axes[1, 1]
 
-        sns.scatterplot(x = "Lambda",
-                        y = "R2_test",
-                        data = result_frame,
+        sns.scatterplot(x="Lambda",
+                        y="R2_test",
+                        data=result_frame,
                         palette="colorblind",
-                        alpha = ALPHA,
-                        hue = "Polynomial",
+                        alpha=ALPHA,
+                        ax=axes[1, 1],
+                        hue="Polynomial",
                         )
-    
+
         ax.set_xlabel("Lambda")
         ax.set_ylabel("R2")
         ax.set_xscale("log")
-        
-        ax.text(-0.25, 0.95, "D", transform=ax.transAxes, 
-                fontsize=16, fontweight="bold", va="top")
 
-        ax.legend()
+        ax.text(-0.25, 0.95, "D", transform=ax.transAxes,
+                fontsize=16, fontweight="bold", va="top")
+        
+        axes[1, 1].legend(title="Poly", bbox_to_anchor=(1.05, 1), loc='upper left')
+
 
         plt.tight_layout()
 
-        plt.savefig(os.path.join(output_dir, filename))
+        plt.savefig(os.path.join(output_dir, filename), dpi=DPI_FIG)
+
 
 def plot_bias_variance_tradeoff(result_frame, output_dir, filename):
 
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    ax = fig.add_subplot(1, 1, 1)
 
-    ax.plot(result_frame["Polynomial"], 
+    ax.plot(result_frame["Polynomial"],
             result_frame["Bias"], '-o',
             label="Bias")
-    
+
     ax.plot(result_frame["Polynomial"],
             result_frame["Variance"], '-o',
             label="Variance")
-    
+
     ax.plot(result_frame["Polynomial"],
             result_frame["Error"], '-o',
             label="Error")
-    
+
     ax.set_xlabel("Polynomial degree")
 
     ax.legend()
 
     plt.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, filename))
-
+    plt.savefig(os.path.join(output_dir, filename), dpi=DPI_FIG)
 
 
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
@@ -357,9 +399,9 @@ def FrankeFunction(x, y, add_noise=False, sigma=0.1):
         return term1 + term2 + term3 + term4 + noise
     else:
         return term1 + term2 + term3 + term4
-    
-def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
 
+
+def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb=None):
     """
     K-fold cross validation, idx is a list of indices.
     in random order, k is the number of folds.
@@ -375,12 +417,12 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
 
     if type == "ridge" and lmb == None:
         raise ValueError("Lambda must be specified for ridge regression.")
-    
+
     if type == "lasso" and lmb == None:
         raise ValueError("Lambda must be specified for LASSO regression.")
 
     index_groups = np.array_split(idx, k)
-    
+
     MSE_test_kfold = np.zeros(k)
     MSE_train_kfold = np.zeros(k)
     R2_test_kfold = np.zeros(k)
@@ -400,11 +442,13 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
         X_test = generate_design_matrix(x_fold, y_fold, p)
 
         if type == "OLS":
-            MSE_train, R2_train, z_tilde_train, beta_train = OLS(X_train, z_train)
+            MSE_train, R2_train, z_tilde_train, beta_train = OLS(
+                X_train, z_train)
             z_tilde_test = X_test.dot(beta_train)
 
         elif type == "ridge":
-            MSE_train, R2_train, z_tilde_train, beta_train = ridge(X_train, z_train, lmb)
+            MSE_train, R2_train, z_tilde_train, beta_train = ridge(
+                X_train, z_train, lmb)
             z_tilde_test = X_test.dot(beta_train)
 
         elif type == "lasso":
@@ -425,8 +469,8 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
         R2_train_kfold[i] = R2_train
 
     result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train",
-                                            "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
-    
+                                         "R2_test", "Polynomial", "Lambda", "Type", "Folds"])
+
     result = {"MSE_train": np.mean(MSE_train_kfold),
               "MSE_test": np.mean(MSE_test_kfold),
               "R2_train": np.mean(R2_train_kfold),
@@ -435,12 +479,10 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
               "Lambda": lmb,
               "Type": type,
               "Folds": k}
-    
+
     result_frame = result_frame._append(result, ignore_index=True)
 
     return result_frame
-
-
 
 
 def get_terrain_data():
@@ -448,7 +490,7 @@ def get_terrain_data():
     from imageio.v3 import imread
 
     for terrain, TERRAIN_NAME in zip([imread("src/SRTM_data_Norway_1.tif"), imread("src/SRTM_data_Norway_2.tif"), imread("src/oslo.tif"), imread("src/eide.tif")],
-                                    ["terrain1", "terrain2", "oslo", "eide"]):
+                                     ["terrain1", "terrain2", "oslo", "eide"]):
         yield terrain, TERRAIN_NAME
 
 
@@ -463,7 +505,8 @@ class TerrainAnalyser():
 
         self.index_vals = np.array(range(np.prod(terrain.shape)))
         self.terrain_values = self.terrain.flatten()
-        self.split_on_chunk = split_on_chunk        # Holds-out partition of image for test if True, else makes random pixels test
+        # Holds-out partition of image for test if True, else makes random pixels test
+        self.split_on_chunk = split_on_chunk
         self.verbose = verbose
 
         self.test_set_ratio = 0.20
@@ -477,44 +520,44 @@ class TerrainAnalyser():
         self.normalize()
 
         self.output_dir = output_dir
-        self.path_scores_train = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_train.npy")
-        self.path_scores_val = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_val.npy")
+        self.path_scores_train = os.path.join(
+            self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_train.npy")
+        self.path_scores_val = os.path.join(
+            self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_val.npy")
 
+        # Loads validation-scores, for HP tuning of alpha and p, from .npy file if false
+        self.calculate_scores = calculate_scores
 
-        self.calculate_scores = calculate_scores    # Loads validation-scores, for HP tuning of alpha and p, from .npy file if false
-
-        self.k_val_split = k_val_split  # number of validation splits, of training set, using k-fold
+        # number of validation splits, of training set, using k-fold
+        self.k_val_split = k_val_split
         self.avals = avals
         self.pvals = pvals
 
         self.model_func = linear_model.Ridge
 
-
     def make_train_test(self):
         if self.split_on_chunk:
-            self.idx_train = self.index_vals[:int(len(self.index_vals) * (1 - self.test_set_ratio))]
+            self.idx_train = self.index_vals[:int(
+                len(self.index_vals) * (1 - self.test_set_ratio))]
             self.idx_test = self.index_vals[max(self.idx_train) + 1:]
 
         else:
-            self.idx_train, self.idx_test = train_test_split(self.index_vals, test_size=self.test_set_ratio, random_state=self.random_state)
-
+            self.idx_train, self.idx_test = train_test_split(
+                self.index_vals, test_size=self.test_set_ratio, random_state=self.random_state)
 
         self.values_train = self.terrain_values[self.idx_train]
         self.values_test = self.terrain_values[self.idx_test]
-
-
 
         self.x_train = self.idx_train.reshape(-1, 1) % self.terrain.shape[0]
         self.y_train = self.idx_train.reshape(-1, 1) // self.terrain.shape[0]
         self.x_test = self.idx_test.reshape(-1, 1) % self.terrain.shape[0]
         self.y_test = self.idx_test.reshape(-1, 1) // self.terrain.shape[0]
 
-
         if self.verbose:
-            print(f"\tcreated train / test sets from {'''image partitions''' if self.split_on_chunk else '''random pixels'''}", end=" ")
+            print(
+                f"\tcreated train / test sets from {'''image partitions''' if self.split_on_chunk else '''random pixels'''}", end=" ")
             print("of sizes", self.idx_train.shape, self.idx_test.shape)
         return 1
-
 
     def normalize(self, plot_histogram=False):
         # Standard-score scaling image gray-levels
@@ -525,9 +568,10 @@ class TerrainAnalyser():
         self.scaler_x = preprocessing.MinMaxScaler(feature_range=(-1, 1))
         self.scaler_y = preprocessing.MinMaxScaler(feature_range=(-1, 1))
 
-
-        self.values_train = self.scaler_img.fit_transform(self.values_train.reshape(-1, 1))
-        self.values_test = self.scaler_img.transform(self.values_test.reshape(-1, 1))
+        self.values_train = self.scaler_img.fit_transform(
+            self.values_train.reshape(-1, 1))
+        self.values_test = self.scaler_img.transform(
+            self.values_test.reshape(-1, 1))
 
         self.x_train = self.scaler_x.fit_transform(self.x_train).reshape(-1)
         self.y_train = self.scaler_y.fit_transform(self.y_train).reshape(-1)
@@ -540,13 +584,11 @@ class TerrainAnalyser():
 
         return 1
 
-
     def show_terrain_partitions(self, showplt=True):
         # TODO: include showing validation partitions here
-        splitmode = "chunk" if self.split_on_chunk else "pixel" # for naming
+        splitmode = "chunk" if self.split_on_chunk else "pixel"  # for naming
 
         # plot_train_test_image(self.terrain, self.idx_test, self.idx_train, output_dir=self.output_dir, filename=f"train_test_split_{self.terrain_name}_{splitmode}")
-
 
         terrain_shape = self.terrain.shape
         fig, ax = plt.subplots(ncols=self.k_val_split)
@@ -560,7 +602,6 @@ class TerrainAnalyser():
             ax[ki].imshow(img_val)
             ax[ki].set_title(f"Fold {ki + 1}")
             ax[ki].axis("off")
-
 
         img_train = np.empty(shape=np.prod(terrain_shape))
         img_test = np.empty(shape=np.prod(terrain_shape))
@@ -580,12 +621,9 @@ class TerrainAnalyser():
         ax[2].set_title("Train + test")
         [axi.axis("off") for axi in ax]
 
-
         plt.show() if showplt else 0
 
-
         return 1
-
 
     def get_validation_set(self, return_index=False):
         num_px_per_fold = len(self.x_train) // self.k_val_split
@@ -593,21 +631,24 @@ class TerrainAnalyser():
         if not self.split_on_chunk:
 
             # Splits by chunk if shuffle = False :))
-            kfold_splitter = KFold(n_splits=self.k_val_split, random_state=self.random_state, shuffle=True)
+            kfold_splitter = KFold(
+                n_splits=self.k_val_split, random_state=self.random_state, shuffle=True)
             kfold_splits = kfold_splitter.split(X=self.idx_train)
-
 
         for ki in range(self.k_val_split):
             if self.split_on_chunk:
-                idx_val_k = self.idx_train[num_px_per_fold * ki:len(self.idx_train) - num_px_per_fold * (self.k_val_split - ki - 1)]
+                idx_val_k = self.idx_train[num_px_per_fold * ki:len(
+                    self.idx_train) - num_px_per_fold * (self.k_val_split - ki - 1)]
                 idx_train_k = np.setdiff1d(self.idx_train, idx_val_k)
             else:
                 # print(num_px_per_fold, len(self.x_train) - num_px_per_fold)
                 idx_train_k, idx_val_k = next(kfold_splits)
                 # print(idx_train_k.shape, idx_val_k.shape)
 
-            values_train_k = self.scaler_img.transform(self.terrain_values[idx_train_k].reshape(-1, 1))
-            values_val_k = self.scaler_img.transform(self.terrain_values[idx_val_k].reshape(-1, 1))
+            values_train_k = self.scaler_img.transform(
+                self.terrain_values[idx_train_k].reshape(-1, 1))
+            values_val_k = self.scaler_img.transform(
+                self.terrain_values[idx_val_k].reshape(-1, 1))
 
             print(f"\n{self.k_val_split}-fold cross-validation: ki={ki}")
             print(idx_train_k.shape, idx_val_k.shape)
@@ -628,11 +669,12 @@ class TerrainAnalyser():
             else:
                 yield ki, values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k
 
-
     def calculate_k_fold_cross_validated(self):
 
-        mse_train_scores = np.ones(shape=(self.k_val_split, len(self.pvals), len(self.avals)))
-        mse_val_scores = np.ones(shape=(self.k_val_split, len(self.pvals), len(self.avals)))
+        mse_train_scores = np.ones(
+            shape=(self.k_val_split, len(self.pvals), len(self.avals)))
+        mse_val_scores = np.ones(
+            shape=(self.k_val_split, len(self.pvals), len(self.avals)))
 
         for ki, values_train_k, values_val_k, x_train_k, x_val_k, y_train_k, y_val_k in self.get_validation_set():
 
@@ -650,10 +692,12 @@ class TerrainAnalyser():
                     zhat_train = m.predict(X_train_k)
                     zhat_val = m.predict(X_val_k)
 
-                    r2_train, r2_val = r2_score(values_train_k, zhat_train), r2_score(values_val_k, zhat_val)
+                    r2_train, r2_val = r2_score(
+                        values_train_k, zhat_train), r2_score(values_val_k, zhat_val)
                     mse_train, mse_val = mean_squared_error(values_train_k, zhat_train), mean_squared_error(
                         values_val_k, zhat_val)
-                    print(f"train / val r2 = {r2_train:.3g} / {r2_val:.3g} \t mse = {mse_train:.3g} / {mse_val:.3g}")
+                    print(
+                        f"train / val r2 = {r2_train:.3g} / {r2_val:.3g} \t mse = {mse_train:.3g} / {mse_val:.3g}")
 
                     mse_train_scores[ki, pi, ai] = mse_train
                     mse_val_scores[ki, pi, ai] = mse_val
@@ -666,19 +710,19 @@ class TerrainAnalyser():
 
         return 1
 
-
     def load_k_fold_cross_validated(self):
         # mse_train_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_train.npy"), allow_pickle=True)
         # mse_val_scores = np.load(os.path.join(OUTPUT_DIR, f"mse_{'''chunk''' if SPLIT_ON_CHUNK else '''pixel'''}_split_{TERRAIN_NAME}_val.npy"), allow_pickle=True)
-        self.mse_train_scores = np.load(self.path_scores_train, allow_pickle=True)
+        self.mse_train_scores = np.load(
+            self.path_scores_train, allow_pickle=True)
         self.mse_val_scores = np.load(self.path_scores_val, allow_pickle=True)
 
         self.mse_train_mean = np.mean(self.mse_train_scores, axis=0)
         self.mse_val_mean = np.mean(self.mse_val_scores, axis=0)
 
-        print("LOADED TRAIN / VALIDATION SCORES FROM ", self.output_dir, self.mse_train_scores.shape, self.mse_val_scores.shape)
+        print("LOADED TRAIN / VALIDATION SCORES FROM ", self.output_dir,
+              self.mse_train_scores.shape, self.mse_val_scores.shape)
         return self.mse_train_scores, self.mse_val_scores
-
 
     def show_k_fold_cross_validated_scores(self, showplt=True):
         # must be run after loader / calculator for obvious reasons
@@ -701,7 +745,8 @@ class TerrainAnalyser():
             ax[i].set_title(name)
             ax[i].set_xlabel("p")
             ax[i].set_ylabel("alpha")
-            ax[i].set_yticks(list(range(len(self.avals))), [f"{a:.2e}" for a in self.avals])
+            ax[i].set_yticks(list(range(len(self.avals))), [
+                             f"{a:.2e}" for a in self.avals])
             ax[i].set_xticks(list(range(len(self.pvals))), self.pvals)
             ax[i].grid(0)
             i += 1
@@ -709,35 +754,39 @@ class TerrainAnalyser():
         fig.tight_layout()
         fig.suptitle(self.terrain_name)
         plt.savefig(os.path.join(self.output_dir,
-                                 f"cv_mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}"))
+                                 f"cv_mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}"), dpi=DPI_FIG)
         plt.show() if showplt else 0
 
         return 1
 
-
     def find_optimal_hps(self):
         # Find MSE minima - optimal alpha, p
 
-        idx_opt = np.unravel_index(np.argmin(self.mse_val_mean, axis=None), self.mse_val_mean.shape)
-        self.p_opt, self.alpha_opt = self.pvals[idx_opt[0]], self.avals[idx_opt[1]]
-        print(f"Optimal p={self.p_opt}, alpha={self.alpha_opt:.3e} (minimal validation MSE = {np.min(self.mse_val_mean):.3e})")
+        idx_opt = np.unravel_index(
+            np.argmin(self.mse_val_mean, axis=None), self.mse_val_mean.shape)
+        self.p_opt, self.alpha_opt = self.pvals[idx_opt[0]
+                                                ], self.avals[idx_opt[1]]
+        print(
+            f"Optimal p={self.p_opt}, alpha={self.alpha_opt:.3e} (minimal validation MSE = {np.min(self.mse_val_mean):.3e})")
 
         return self.p_opt, self.alpha_opt
-
 
     def evaluate_on_test(self):
         # Test on hold-out data
         m = self.model_func(fit_intercept=False, alpha=self.alpha_opt)
-        X_train = generate_design_matrix(self.x_train, self.y_train, n=self.p_opt)
+        X_train = generate_design_matrix(
+            self.x_train, self.y_train, n=self.p_opt)
         X_test = generate_design_matrix(self.x_test, self.y_test, n=self.p_opt)
 
         m.fit(X_train, self.values_train)
         zhat_train = m.predict(X_train)
         zhat_test = m.predict(X_test)
 
-        r2_train, r2_test = r2_score(self.values_train, zhat_train), r2_score(self.values_test, zhat_test)
-        mse_train, mse_test = mean_squared_error(self.values_train, zhat_train), mean_squared_error(self.values_test, zhat_test)
-        print(f"R2 train={r2_train:.3e}, test={r2_test:.3e}\tMSE train={mse_train:.3e}, test={mse_test:.3e}")
-
+        r2_train, r2_test = r2_score(self.values_train, zhat_train), r2_score(
+            self.values_test, zhat_test)
+        mse_train, mse_test = mean_squared_error(
+            self.values_train, zhat_train), mean_squared_error(self.values_test, zhat_test)
+        print(
+            f"R2 train={r2_train:.3e}, test={r2_test:.3e}\tMSE train={mse_train:.3e}, test={mse_test:.3e}")
 
         return 1
