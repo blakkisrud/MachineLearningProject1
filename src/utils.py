@@ -34,7 +34,14 @@ import os
 import seaborn as sns
 import pandas as pd
 
+# Seaborn palette
+
+custom_palette = sns.color_palette("colorblind", 8)
+sns.set_palette(custom_palette)
+
 sns.set_style("whitegrid")
+
+ALPHA = 0.80
 
 # Functions
 
@@ -186,8 +193,12 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
     fig = plt.figure()
     ax = fig.add_subplot(1,2,1)
 
-    ax.plot(result_frame["Polynomial"], result_frame["MSE_train"], label="MSE train")
-    ax.plot(result_frame["Polynomial"], result_frame["MSE_test"], label="MSE test")
+    ax.text(-0.25, 0.98, "A", transform=ax.transAxes, 
+            fontsize=16, fontweight="bold", va="top")
+
+
+    ax.plot(result_frame["Polynomial"], result_frame["MSE_train"], 'o', label="MSE train")
+    ax.plot(result_frame["Polynomial"], result_frame["MSE_test"], 'o', label="MSE test")
 
     ax.set_xlabel("Polynomial degree")
     ax.set_ylabel("MSE")
@@ -196,8 +207,11 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 
     ax = fig.add_subplot(1,2,2)
 
-    ax.plot(result_frame["Polynomial"], result_frame["R2_train"], label="R2 train")
-    ax.plot(result_frame["Polynomial"], result_frame["R2_test"], label="R2 test")
+    ax.plot(result_frame["Polynomial"], result_frame["R2_train"],'o',  label="R2 train")
+    ax.plot(result_frame["Polynomial"], result_frame["R2_test"],'o',  label="R2 test")
+    
+    ax.text(-0.25, 0.98, "B", transform=ax.transAxes, 
+            fontsize=16, fontweight="bold", va="top")
 
     ax.set_xlabel("Polynomial degree")
     ax.set_ylabel("R2")
@@ -225,22 +239,34 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
         sns.scatterplot(x = "Lambda",
                         y = "MSE_train",
                         data = result_frame,
+                        alpha = ALPHA,
+                        palette="colorblind",
                         hue = "Polynomial")
     
         ax.set_xlabel("Lambda")
         ax.set_ylabel("MSE")
         ax.set_xscale("log")
+        
+        ax.text(-0.25, 0.95, "A", transform=ax.transAxes, 
+                fontsize=16, fontweight="bold", va="top")
     
         ax = fig.add_subplot(2,2,2)
     
         sns.scatterplot(x = "Lambda",
                         y = "MSE_test",
                         data = result_frame,
+                        alpha = ALPHA,
+                        palette="colorblind",
                         hue = "Polynomial")
 
         ax.set_xlabel("Lambda")
         ax.set_ylabel("MSE")
         ax.set_xscale("log")
+        
+        ax.text(-0.25, 0.95, "B", transform=ax.transAxes, 
+                fontsize=16, fontweight="bold", va="top")
+
+
 
         ax.legend()
 
@@ -249,22 +275,33 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
         sns.scatterplot(x = "Lambda",
                         y = "R2_train",
                         data = result_frame,
+                        palette="colorblind",
+                        alpha = ALPHA,
                         hue = "Polynomial")
     
         ax.set_xlabel("Lambda")
         ax.set_ylabel("R2")
         ax.set_xscale("log")
+        
+        ax.text(-0.25, 0.95, "C", transform=ax.transAxes, 
+                fontsize=16, fontweight="bold", va="top")
 
         ax = fig.add_subplot(2,2,4)
 
         sns.scatterplot(x = "Lambda",
                         y = "R2_test",
                         data = result_frame,
-                        hue = "Polynomial")
+                        palette="colorblind",
+                        alpha = ALPHA,
+                        hue = "Polynomial",
+                        )
     
         ax.set_xlabel("Lambda")
         ax.set_ylabel("R2")
         ax.set_xscale("log")
+        
+        ax.text(-0.25, 0.95, "D", transform=ax.transAxes, 
+                fontsize=16, fontweight="bold", va="top")
 
         ax.legend()
 
@@ -343,9 +380,6 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb = None):
         raise ValueError("Lambda must be specified for LASSO regression.")
 
     index_groups = np.array_split(idx, k)
-
-    #result_frame = pd.DataFrame(columns=["MSE_train", "MSE_test", "R2_train", 
-    #                                     "R2_test", "Polynomial", "Lambda", "Type"])
     
     MSE_test_kfold = np.zeros(k)
     MSE_train_kfold = np.zeros(k)
