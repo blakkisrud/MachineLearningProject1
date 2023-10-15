@@ -41,7 +41,7 @@ OUTPUT_DIR = "output_tmp"  # Output directory for figures
 STEP_SIZE = 0.01  # Step size for sampling the Franke function
 DPI_FIG = project_utils.DPI_FIG  # DPI for saving figures
 PERFORM_SCALING = True  # Perform scaling of the data
-PERFORM_SMOOTHING = True
+PERFORM_SMOOTHING = False
 PLOT_TIME = False
 
 # Running flags
@@ -56,7 +56,7 @@ def part_a(plot_prediction=False):
 
     # Use only the first terrain data set
 
-    data, name = terrain[0]
+    data, name = terrain[1]
 
     data_orig = data.copy()
 
@@ -129,8 +129,8 @@ def part_a(plot_prediction=False):
 
     elapsed_time = []
 
-    for p in range(1, 71, 4):
-    #for p in p_to_plot:
+    #for p in range(1, 71, 4):
+    for p in p_to_plot:
 
         start_time = time.time()
         

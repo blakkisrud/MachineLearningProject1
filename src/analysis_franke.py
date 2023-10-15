@@ -39,14 +39,16 @@ STEP_SIZE = 0.01  # Step size for sampling the Franke function
 DPI_FIG = project_utils.DPI_FIG  # DPI for saving figures
 PERFORM_SCALING = False  # Perform scaling of the data - normal of the Franke function
 
+
 # Running flags
 
-DO_PART_A = True
-DO_PART_B = True
-DO_PART_C = True
+DO_PART_A = False
+DO_PART_B = False
+DO_PART_C = False
 DO_PART_D = True
 DO_PART_E = True
 DO_PART_F = True
+
 
 # Helper functions
 
@@ -355,8 +357,8 @@ def part_e(step_size=STEP_SIZE):
         y_train = y[idx_train]
         z_train = franke_z_flat[idx_train]
 
-        k_bootstraps = 100
-        n_samples = 200
+        k_bootstraps = 50
+        n_samples = 2500
 
         print("The relativel size of the bootstrap samples: ",
               n_samples/len(x_train))
@@ -398,6 +400,9 @@ def part_e(step_size=STEP_SIZE):
     project_utils.plot_bias_variance_tradeoff(results,
                                               OUTPUT_DIR,
                                               "franke_bias_variance.png")
+    
+    sys.exit()
+
 
     print(results)
 
