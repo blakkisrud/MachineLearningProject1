@@ -37,7 +37,7 @@ SIGMA = 0.1  # Noise level
 OUTPUT_DIR = "output_tmp"  # Output directory for figures
 STEP_SIZE = 0.01  # Step size for sampling the Franke function
 DPI_FIG = project_utils.DPI_FIG  # DPI for saving figures
-PERFORM_SCALING = False
+PERFORM_SCALING = False  # Perform scaling of the data - normal of the Franke function
 
 # Running flags
 

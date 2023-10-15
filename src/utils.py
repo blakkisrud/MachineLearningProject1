@@ -158,6 +158,9 @@ def OLS(X, z):
 
 def ridge(X, z, lmb):
     """
+
+    Variables:
+
     X: Design matrix
     z: Data
     lmb: Ridge parameter
@@ -176,6 +179,16 @@ def plot_train_test_image(z, idx_test, idx_train, output_dir, filename):
     """
 
     z here is a 2d array
+
+    Variables:
+        z (np.array): 2d array
+        idx_test (np.array): Array of indices for the test set
+        idx_train (np.array): Array of indices for the train set
+        output_dir (str): Output directory
+        filename (str): Filename of the plot
+
+    Returns:
+        None
 
     """
 
@@ -218,7 +231,7 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 
     For the OLS-analysis
 
-    Arguments:
+    Variables:
         result_frame (pandas.DataFrame): Contains the results from the regression analysis
         output_dir (str): Output directory
         filename (str): Filename of the plot
@@ -263,6 +276,15 @@ def plot_mse_and_r2_OLS(result_frame, output_dir, filename):
 def plot_mse_and_r2(result_frame, output_dir, filename, type):
     """
     Plot of the ridge, LASSO or OLS regression analysis.
+
+    Variables:
+        result_frame (pandas.DataFrame): Contains the results from the regression analysis
+        output_dir (str): Output directory
+        filename (str): Filename of the plot
+        type (str): Type of regression analysis
+
+    Returns:
+        None
     """
 
     if type == "OLS":
@@ -353,6 +375,17 @@ def plot_mse_and_r2(result_frame, output_dir, filename, type):
 
 
 def plot_bias_variance_tradeoff(result_frame, output_dir, filename):
+    """
+    Plot the bias-variance trade-off
+
+    Variables:
+        result_frame (pandas.DataFrame): Contains the results from the regression analysis
+        output_dir (str): Output directory
+        filename (str): Filename of the plot
+
+    Returns:
+        None
+    """
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -382,11 +415,14 @@ def FrankeFunction(x, y, add_noise=False, sigma=0.1):
     """
     Franke function, used for regression analysis.
 
-    Args:
+    Variables:
         x (float): x value
         y (float): y value
         add_noise (bool): Whether to add noise to the function
         sigma (float): Standard deviation of the noise
+
+    Returns:
+        float: Value of the Franke function
     """
 
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -412,6 +448,16 @@ def k_fold_cross_validation(idx, k, type, p, x, y, z, lmb=None):
 
     Should return a pandas frame with the MSE, p2 of train
     and test of each fold.
+
+    Variables:
+        idx (np.array): Array of indices
+        k (int): Number of folds
+        type (str): Type of regression analysis
+        p (int): Polynomial degree
+        x (np.array): x values
+        y (np.array): y values
+        z (np.array): z values
+        lmb (float): Lambda value
 
     """
 
