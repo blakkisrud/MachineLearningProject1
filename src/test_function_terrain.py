@@ -46,13 +46,15 @@ PLOT_TIME = False
 
 # Running flags
 
-DO_PART_A = True
+DO_PART_A = True # Only implemented for OLS
 
 def part_a(plot_prediction=False):
 
     # Load the terrain data
 
     terrain = list(project_utils.get_terrain_data())
+
+    # Use only the first terrain data set
 
     data, name = terrain[0]
 
@@ -61,6 +63,8 @@ def part_a(plot_prediction=False):
     # Downsample the data
 
     data = resize(data, (int(data.shape[0]/12), int(data.shape[1]/12)), anti_aliasing=True)
+
+    # Perform a gaussian smoothing of the data
     
     if PERFORM_SMOOTHING:
         data = gaussian_filter(data, sigma=10)
@@ -109,6 +113,8 @@ def part_a(plot_prediction=False):
         columns=["Polynomial", "MSE_test", "MSE_train", "R2_test", "R2_train"])
         
     if plot_prediction:
+
+        # Only plot the prediction for these polynomial degrees
 
         p_to_plot = [5, 20, 50]
 
@@ -169,19 +175,9 @@ def part_a(plot_prediction=False):
             img_predicton[idx_test] = z_pred
 
             img_predicton = img_predicton.reshape(data.shape)
-
-            # Plot the prediction
-
-            #fig, axes = plt.subplots(1, 3, figsize=(10, 5))
-
-            #axes[0].imshow(franke_z, cmap="viridis")
-            #axes[0].set_title("Franke function")
             
             axes[plot_row,0].imshow(Z_pred_whole_image, cmap="viridis")
             axes[plot_row,0].set_title("Prediction for p = " + str(p))
-
-            #axes[p].imshow(Z_pred_whole_image, cmap="viridis")
-            #axes[p].set_title("Prediction")
 
             axes[plot_row,1].imshow(
                 (data - Z_pred_whole_image.reshape(data.shape)), cmap="viridis")
