@@ -6,7 +6,6 @@ Authors:
 * Frederick Eichenberger
 * Toralf Husevåg
 * Johan Blakkisrud
-* Peter
 
 ## Relevant files
 
