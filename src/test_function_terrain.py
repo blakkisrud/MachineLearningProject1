@@ -2,7 +2,11 @@
 
 This script is used to test the OLS method on the terrain data.
 Various stress tests are performed to test whether downsampling
-of the data or smoothing with a Gaussian filter 
+of the data or smoothing with a Gaussian filter.
+
+The script also plots the prediction for orders of the polynomial
+
+The script lacks documentation.
 
 """
 
@@ -28,6 +32,8 @@ from sklearn.utils import resample
 from skimage.transform import resize
 import time
 from scipy.ndimage import gaussian_filter
+from matplotlib.colors import Normalize
+
 
 # Global plotting parameters
 
@@ -40,15 +46,17 @@ SIGMA = 0.1  # Noise level
 OUTPUT_DIR = "output_tmp"  # Output directory for figures
 STEP_SIZE = 0.01  # Step size for sampling the Franke function
 DPI_FIG = project_utils.DPI_FIG  # DPI for saving figures
-PERFORM_SCALING = True  # Perform scaling of the data
-PERFORM_SMOOTHING = False
-PLOT_TIME = False
+PERFORM_SCALING = False  # Perform scaling of the data
+PERFORM_SMOOTHING = False  # Perform gaussian smoothing of the data
+PLOT_TIME = False  # Plot the time elapsed for each polynomial degree
+DOWN_SAMPLE_FACTOR = 12
 
 # Running flags
 
-DO_PART_A = True # Only implemented for OLS
+DO_STRESS_1 = True  # Only implemented for OLS
 
-def part_a(plot_prediction=False):
+
+def stress_test_1(plot_prediction=False):
 
     # Load the terrain data
 
@@ -56,16 +64,17 @@ def part_a(plot_prediction=False):
 
     # Use only the first terrain data set
 
-    data, name = terrain[1]
+    data, name = terrain[0]
 
     data_orig = data.copy()
 
     # Downsample the data
 
-    data = resize(data, (int(data.shape[0]/12), int(data.shape[1]/12)), anti_aliasing=True)
+    data = resize(data, (int(data.shape[0]/DOWN_SAMPLE_FACTOR),
+                  int(data.shape[1]/DOWN_SAMPLE_FACTOR)), anti_aliasing=True)
 
     # Perform a gaussian smoothing of the data
-    
+
     if PERFORM_SMOOTHING:
         data = gaussian_filter(data, sigma=10)
 
@@ -79,14 +88,14 @@ def part_a(plot_prediction=False):
     data_flat = data.ravel()
     x = x.ravel()
     y = y.ravel()
-    
+
     index_vals = np.array(range(np.prod(data.shape)))
 
     print(index_vals.shape)
 
     idx_train, idx_test = train_test_split(
         index_vals, test_size=0.3, random_state=42)
-    
+
     if PERFORM_SCALING:
 
         scaler_vals = preprocessing.StandardScaler()
@@ -97,43 +106,65 @@ def part_a(plot_prediction=False):
         y_orig = y.copy()
         franke_z_flat_orig = data_flat.copy()
 
-        #x[idx_train] = coord_scaler_x.fit_transform(x[idx_train].reshape(-1, 1)).ravel()
-        #y[idx_train] = coord_scaler_y.fit_transform(y[idx_train].reshape(-1, 1)).ravel()
-        data_flat[idx_train] = scaler_vals.fit_transform(data_flat[idx_train].reshape(-1, 1)).ravel()
-        data_flat[idx_test] = scaler_vals.transform(data_flat[idx_test].reshape(-1, 1)).ravel()
+        # x[idx_train] = coord_scaler_x.fit_transform(x[idx_train].reshape(-1, 1)).ravel()
+        # y[idx_train] = coord_scaler_y.fit_transform(y[idx_train].reshape(-1, 1)).ravel()
+        data_flat[idx_train] = scaler_vals.fit_transform(
+            data_flat[idx_train].reshape(-1, 1)).ravel()
+        data_flat[idx_test] = scaler_vals.transform(
+            data_flat[idx_test].reshape(-1, 1)).ravel()
 
     # Save the train and test data sets as images
 
     project_utils.plot_train_test_image(
         data, idx_test, idx_train, OUTPUT_DIR, "test_terrain_training_test.png")
-    
+
     plt.close()
 
     results = pd.DataFrame(
         columns=["Polynomial", "MSE_test", "MSE_train", "R2_test", "R2_train"])
-        
+
     if plot_prediction:
 
         # Only plot the prediction for these polynomial degrees
 
         p_to_plot = [5, 20, 50]
 
-        fig, axes = plt.subplots(nrows=len(p_to_plot)+1, ncols=2, figsize=(5, 10))
+        fig, axes = plt.subplots(
+            nrows=len(p_to_plot)+1, ncols=2, figsize=(5, 10))
 
         print(axes)
 
-        axes[0,0].imshow(data, cmap="viridis")
-        axes[0,0].set_title("Data")
+        if PERFORM_SCALING:
+
+            data_img = scaler_vals.inverse_transform(
+                data_flat.reshape(-1, 1)).ravel()
+
+            min_val_data = np.min(data_img)
+            max_val_data = np.max(data_img)
+
+        data_img = data
+
+        min_val_data = np.min(data)
+        max_val_data = np.max(data)
+
+        im = axes[0, 0].imshow(data_img, cmap="viridis")
+        axes[0, 0].set_title("Data")
+        fig.colorbar(im, ax=axes[0, 0])
+
+        axes[0, 1].hist(data_img.ravel(), bins=100)
+        axes[0, 1].set_title("Distribution")
 
         plot_row = 1
 
     elapsed_time = []
 
-    #for p in range(1, 71, 4):
+    min_and_max_for_p = np.zeros([3, 2])
+
+    # for p in range(1, 71, 4):
     for p in p_to_plot:
 
         start_time = time.time()
-        
+
         print(p)
 
         X_train = project_utils.generate_design_matrix(
@@ -168,6 +199,11 @@ def part_a(plot_prediction=False):
 
             Z_pred_whole_image = X_whole_image.dot(beta)
 
+            if PERFORM_SCALING:
+
+                Z_pred_whole_image = scaler_vals.inverse_transform(
+                    Z_pred_whole_image.reshape(-1, 1)).ravel()
+
             Z_pred_whole_image = Z_pred_whole_image.reshape(data.shape)
 
             img_predicton = np.zeros(index_vals.shape)
@@ -175,18 +211,26 @@ def part_a(plot_prediction=False):
             img_predicton[idx_test] = z_pred
 
             img_predicton = img_predicton.reshape(data.shape)
-            
-            axes[plot_row,0].imshow(Z_pred_whole_image, cmap="viridis")
-            axes[plot_row,0].set_title("Prediction for p = " + str(p))
 
-            axes[plot_row,1].imshow(
+            min_val = np.min(Z_pred_whole_image)
+            max_val = np.max(Z_pred_whole_image)
+
+            min_and_max_for_p[plot_row-1, 0] = min_val
+            min_and_max_for_p[plot_row-1, 1] = max_val
+
+            im = axes[plot_row, 0].imshow(
+                Z_pred_whole_image, cmap="viridis", vmin=min_val_data, vmax=max_val_data)
+            axes[plot_row, 0].set_title("Prediction for p = " + str(p))
+            fig.colorbar(im, ax=axes[plot_row, 0])
+
+            im = axes[plot_row, 1].imshow(
                 (data - Z_pred_whole_image.reshape(data.shape)), cmap="viridis")
-            axes[plot_row,1].set_title("Difference for p = " + str(p))
+            axes[plot_row, 1].set_title("Difference for p = " + str(p))
+            fig.colorbar(im, ax=axes[plot_row, 1])
 
             plot_row += 1
 
             print(plot_row)
-
 
     if plot_prediction:
         for ax in axes.ravel():
@@ -194,18 +238,22 @@ def part_a(plot_prediction=False):
 
         plt.tight_layout()
         plt.savefig(os.path.join(
-            OUTPUT_DIR, "test_terrain_prediction_all" + ".png"), dpi = DPI_FIG)
+            OUTPUT_DIR, "test_terrain_prediction_all" + ".png"), dpi=DPI_FIG)
 
     print(results)
 
     print("Time elapsed: ", elapsed_time)
+
+    print("Min and max for prolys: ")
+    print(min_and_max_for_p)
+    print("Min and max for data: ", min_val_data, max_val_data)
 
     if PLOT_TIME:
 
         fig_time = plt.figure()
         ax = fig_time.add_subplot(111)
 
-        ax.plot(range(1,71,4), elapsed_time, label="Time elapsed")
+        ax.plot(range(1, 71, 4), elapsed_time, label="Time elapsed")
 
         ax.set_xlabel("Polynomial degree")
         ax.set_ylabel("Time elapsed [s]")
@@ -214,12 +262,13 @@ def part_a(plot_prediction=False):
 
         plt.tight_layout()
         plt.savefig(os.path.join(
-            OUTPUT_DIR, "test_terrain_time" + ".png"), dpi = DPI_FIG)
+            OUTPUT_DIR, "test_terrain_time" + ".png"), dpi=DPI_FIG)
 
     project_utils.plot_mse_and_r2(results,
                                   OUTPUT_DIR,
                                   "test_terrain_OLS_mse_r2.png",
                                   "OLS")
-    
-if DO_PART_A:
-    part_a(plot_prediction=True)
+
+
+if DO_STRESS_1:
+    stress_test_1(plot_prediction=True)
