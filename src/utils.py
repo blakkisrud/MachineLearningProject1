@@ -301,7 +301,7 @@ class TerrainAnalyser():
     def __init__(self, terrain, terrain_name="noname",
                  output_dir="output_terrain", calculate_scores=True, split_on_chunk=False,
                  k_val_split=3, avals=np.logspace(0, 3, 4), pvals=list(range(2)),
-                 verbose=True):
+                 verbose=True, model_func="ridge"):
 
         self.terrain = terrain
         self.terrain_name = terrain_name
@@ -322,8 +322,8 @@ class TerrainAnalyser():
         self.normalize()
 
         self.output_dir = output_dir
-        self.path_scores_train = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_train.npy")
-        self.path_scores_val = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_val.npy")
+        self.path_scores_train = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_{model_func}_train.npy")
+        self.path_scores_val = os.path.join(self.output_dir, f"mse_{'''chunk''' if self.split_on_chunk else '''pixel'''}_split_{self.terrain_name}_{model_func}_val.npy")
 
 
         self.calculate_scores = calculate_scores    # Loads validation-scores, for HP tuning of alpha and p, from .npy file if false
@@ -332,7 +332,13 @@ class TerrainAnalyser():
         self.avals = avals
         self.pvals = pvals
 
-        self.model_func = linear_model.Ridge
+        if model_func == "ridge":
+            self.model_func = linear_model.Ridge
+        elif model_func == "lasso":
+            self.model_func = linear_model.Lasso
+        else:
+            print("Err: model", model_func, "not implemented. Try ridge or lasso.")
+            sys.exit()
 
 
     def make_train_test(self):
