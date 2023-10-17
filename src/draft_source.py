@@ -28,9 +28,30 @@ from sklearn import preprocessing
 import seaborn as sns
 from sklearn.utils import resample
 sns.set_style("whitegrid")
+import utils as project_utils
 
 
 output_dir = 'output_tmp'
+
+STEP_SIZE = 0.01
+
+x = np.arange(0, 1, STEP_SIZE)
+y = np.arange(0, 1, STEP_SIZE)
+
+x_m,y_m = np.meshgrid(x,y)
+
+z = project_utils.FrankeFunction(x_m, y_m)
+
+p = 2
+
+X = project_utils.generate_design_matrix(x_m, y_m, p)
+
+print(z.shape)
+print(X.shape)
+
+
+
+sys.exit()
 
 
 def FrankeFunction(x, y, add_noise=False, sigma=0.1):
